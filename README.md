@@ -1,1 +1,3 @@
 # SearchingTales [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://LauraBMo.github.io/SearchingTales.jl/stable/) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://LauraBMo.github.io/SearchingTales.jl/dev/) [![Build Status](https://github.com/LauraBMo/SearchingTales.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/LauraBMo/SearchingTales.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/LauraBMo/SearchingTales.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/LauraBMo/SearchingTales.jl)
+
+Searching for likely-non-existing polynomials.
