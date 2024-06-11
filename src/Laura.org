@@ -1,0 +1,354 @@
+#+title: Laura's computations
+
+
+* Introduction
+
+Searching for a deg10-sing12-mult3 planar curve, Casas-Alvero polynomial of rank > 1...
+and all that.
+
+* 12 Triple points (Trips)
+
+Planar curve of degree 10 with 12 triple points.
+
+** Packages
+
+#+begin_src julia :results output
+# using Distances
+# using Plots; pyplot()
+# import Combinatorics as CC
+
+import HomotopyContinuation as HC#, Nemo
+X = collect(HC.@var x,y)
+
+
+using Revise
+import SearchingTales as PC
+PC.set_VARS(X)
+PC.set_CH_System(PC.System_dense());
+#+end_src
+
+** Testing
+
+** Compute everything for each
+*** Pre-
+#+begin_src julia
+import HomotopyContinuation as HC#, Nemo
+
+import Evolutionary as EE
+options = EE.Options(iterations=500,
+                     show_trace=true,
+                     show_every=1,
+                     parallelization=:thread,
+                     # parallelization=:serial,
+                     )
+
+using Revise
+import PlanarCurves as PC
+
+X = collect(HC.@var x,a)
+PC.set_VARS(X)
+
+#+end_src
+*** Using a fix partition, triangulation
+**** Init
+#+begin_src julia
+# using Plots; pyplot();
+C = PC.randcurve(); (size(C), eltype(C))
+
+_fit = PC.Fitness(C)
+#+end_src
+**** Optimization.jl
+***** Init
+#+begin_src julia
+# Import the package and define the problem to optimize
+using Optimization
+# rosenbrock(u, p) = (p[1] - u[1])^2 + p[2] * (u[2] - u[1]^2)^2
+# u0 = zeros(2)
+# p = [1.0, 100.0]
+# C = PC.randcurve()
+# C = PC.curve_read("C_fit29", ".")
+# PC.fitness(C)
+_loss(u,p) = _fit(u)
+using ModelingToolkit
+f = OptimizationFunction(_loss, AutoModelingToolkit())
+
+using Enzyme
+f = OptimizationFunction(_loss, AutoEnzyme())
+
+#+end_src
+
+***** CMAEvolutionaStrategy
+- No AutoDiff needed.
+- lb, ub required.
+#+begin_src julia
+using OptimizationCMAEvolutionStrategy
+f = OptimizationFunction(_loss)
+
+r = 5.0
+prob = Optimization.OptimizationProblem(f, C; lb = -r*ones(Float64, 66), ub = r*ones(Float64, 66))
+sol = solve(prob, CMAEvolutionStrategyOpt())
+#+end_src
+
+***** OptimJL
+#+begin_src julia
+prob = OptimizationProblem(f, C)
+
+# Import a solver package and solve the optimization problem
+using OptimizationOptimJL
+sol = solve(prob, NelderMead())
+
+
+#+end_src
+***** BBO
+#+begin_src julia
+# Define function and its derivatives.(it seems to work...)
+using Enzyme
+f = OptimizationFunction(_loss, AutoEnzyme())
+
+# Import a different solver package and solve the optimization problem a different way
+using OptimizationBBO
+prob = OptimizationProblem(_loss, C, lb = -5.0*ones(Float64, 66), ub = 5*ones(Float64, 66))
+prob = OptimizationProblem(_loss, C)
+sol = solve(prob, BBO_adaptive_de_rand_1_bin_radiuslimited())
+C_subopt = sol.u # Important!!
+#+end_src
+*** Perimeter - Ga
+#+begin_src julia
+# PC.empty_dict!(); individual = PC.randcurve();
+# PC.empty_dict!();
+
+C = PC.randcurve();
+
+PC.complexfy(C)
+# C = PC.read_curve()
+
+# Now curves are vectors of floats
+# randnC() = randn(ComplexF64)
+# randC() = rand(ComplexF64)
+
+ga = EE.GA(populationSize = 50,
+           crossoverRate = 0.7,
+           # mutationRate = 0.3,
+           # selection = uniformranking(5),
+           # selection = EE.tournament(33),
+           # Positive integer specifies how many individuals in the current to survive to the next generation. Floating number specifies fraction of
+           epsilon = 0.7,
+           crossover = PC.hyper_crossover(randn),
+           mutation = PC.hyper_mutate(0.6, 5e-1),
+           );
+
+res = EE.optimize(PC.fitness,
+                  C,
+                  ga,
+                  options,
+                  )
+
+
+# PC.triangles(nodes, Iterators.partition(T,3))
+#+end_src
+*** Perimeter - CMAES
+#+begin_src julia
+C = PC.randcurve();
+# C = PC.read_curve()
+PC.fitness(C)
+cmaes = EE.CMAES()
+
+res = EE.optimize(PC.fitness,
+                  C,
+                  cmaes,
+                  options,
+                  )
+#+end_src
+*** Optimization.jl
+**** Init
+#+begin_src julia
+# Import the package and define the problem to optimize
+using Optimization
+# rosenbrock(u, p) = (p[1] - u[1])^2 + p[2] * (u[2] - u[1]^2)^2
+# u0 = zeros(2)
+# p = [1.0, 100.0]
+# C = PC.randcurve()
+C = PC.curve_read("C_fit29", ".")
+# PC.fitness(C)
+_loss(u,p) = PC.fitness(u)
+using ModelingToolkit
+f = OptimizationFunction(_loss, AutoModelingToolkit())
+
+using Enzyme
+f = OptimizationFunction(_loss, AutoEnzyme())
+
+#+end_src
+
+**** CMAEvolutionaStrategy
+- No AutoDiff needed.
+- lb, ub required.
+#+begin_src julia
+using OptimizationCMAEvolutionStrategy
+f = OptimizationFunction(_loss)
+
+r = 5.0
+prob = Optimization.OptimizationProblem(f, C; lb = -r*ones(Float64, 66), ub = r*ones(Float64, 66))
+sol = solve(prob, CMAEvolutionStrategyOpt())
+#+end_src
+
+**** OptimJL
+#+begin_src julia
+prob = OptimizationProblem(f, C)
+
+# Import a solver package and solve the optimization problem
+using OptimizationOptimJL
+sol = solve(prob, NelderMead())
+
+
+#+end_src
+**** BBO
+#+begin_src julia
+# Define function and its derivatives.(it seems to work...)
+using Enzyme
+f = OptimizationFunction(_loss, AutoEnzyme())
+
+# Import a different solver package and solve the optimization problem a different way
+using OptimizationBBO
+prob = OptimizationProblem(_loss, C, lb = -5.0*ones(Float64, 66), ub = 5*ones(Float64, 66))
+prob = OptimizationProblem(_loss, C)
+sol = solve(prob, BBO_adaptive_de_rand_1_bin_radiuslimited())
+C_subopt = sol.u # Important!!
+#+end_src
+*** Ploting nodes partition
+#+begin_src julia
+using Plots; pyplot();
+C = PC.randcurve(); (size(C), eltype(C))
+nnodes = PC.get_nodes(C);
+M = PC.get_distances(nnodes)
+TT = PC.get_partition(M)
+affnodes = PC._dehomo.(nnodes);
+
+
+PC.plotcurve(C; lims = [-3, 3])
+PC.plotcurvemap(C; lims = [-3, 3])
+#+end_src
+*** Getting initial points
+#+begin_src julia
+C = PC.randcurve(); size(C)
+curves = [PC.randcurve() for _ in 1:10];
+min, i = findmin(PC.fitness, curves)
+
+# T = PC.get_partition(nodes)
+
+nodes = PC.HC_nodes(C);
+nodes1 = PC.HC_nodes(C);
+nodes2 = PC.HC_nodes(C);
+[PC.intol(p, nodes2) for p in nodes1] |> all # true
+[PC.intol(p, nodes1) for p in nodes2] |> all # true
+
+T1 = PC.get_partition(nodes1)
+T2 = PC.get_partition(nodes2)
+
+g(nodes) = PC.fitness_perimeter(nodes, PC.get_partition(nodes))
+
+g(nodes1), g(nodes2)
+
+
+
+PC.fitness_perimeter(nodes, PC.get_partition(nodes))
+
+f = () -> begin
+    nodes = PC.HC_nodes(C)
+    PC.fitness_perimeter(nodes, PC.get_partition(nodes))
+end
+
+
+trials = map(_ -> PC.fitness(C), 1:500);
+
+using StatsPlots
+boxplot(trials)
+#+end_src
+
+#+RESULTS:
+
+*** IntervalRootFinding
+#+begin_src julia
+# using IntervalRootFinding
+import IntervalRootFinding as IRF
+# import IntervalArithmetic as IA
+
+import HomotopyContinuation as HC#, Nemo
+
+using Revise
+import PlanarCurvesFullEach as PC
+X = collect(HC.@var x,a)
+
+PC.set_VARS(X)
+# PC.set_CH_System(PC.System_dense());
+
+deg = 10
+ncoeff = (deg+1)*PC.N
+
+C = PC.randcurve();
+PC.fitness(C)
+
+box(v::AbstractVector, r) = IntervalBox([(x-r)..(x+r) for x in v])
+C = PC.curve_read("C_fit29", ".")
+
+using StaticArrays
+g((x, y)) = SVector(sin(x), cos(y))
+X = IntervalBox(-3..3, 2)
+
+rts = roots(g, X)
+
+b = box(C, 50);
+
+bounds(x) = (x.lo, x.hi)
+function _fit(x)
+    # any(isempty_interval.(x)) && return x
+    println("Inerval fit computed")
+    bd = bounds.(x)
+    Low, High = first.(bd), last.(bd)
+    low_fit = PC.fitness(Low)
+    out = [IRF.Interval(low_fit, PC.fitness(High))]
+    # println(typeof(Low))
+    for (j, hi) in enumerate(High)
+        _end = Array(Low)
+        _end[j] = hi
+        high_fit = PC.fitness(_end)
+        push!(out, IRF.Interval(low_fit, high_fit))
+    end
+    println("Loop ok!")
+    # return SVector(IRF.Interval(out1, out2))
+    return SVector{length(out)}(out)
+end
+
+IRF.roots(_fit, b, Newton, 1e-5)
+# IRF.roots(_fit, b, Bisection)
+#+end_src
+
+*** Benchmark HC
+#+begin_src julia
+using BenchmarkTools
+
+C = PC.randcurve();
+CC = PC.complexfy(C)
+PC.get_multiplepoints(C)
+
+PC.get_multiplepoints_fixparameters(CC)
+PC.get_multiplepoints_buildsystem(CC)
+
+
+using StatsPlots
+
+StatsPlots.boxplot!(result::BenchmarkTools.Trial; kwargs...) = boxplot!(result.times; kwargs)
+_boxplot!(result::BenchmarkTools.Trial; kwargs...) = boxplot!(result.times; kwargs)
+
+ben = @benchmark PC.get_multiplepoints_buildsystem($(CC)); boxplot!(ben.times; label="const")
+ben = @benchmark PC.get_multiplepoints_fixparameters($(CC)); boxplot!(ben.times; label="const")
+
+ben = @benchmark PC.get_multiplepoints_buildsystem($(CC)); boxplot!(ben.times; label="build")
+ben = @benchmark PC.get_multiplepoints_fixparameters($(CC)); boxplot!(ben.times; label="build")
+
+@benchmark PC.get_multiplepoints_buildsystem(CC)
+@benchmark PC.get_multiplepoints_fixparameters(CC)
+
+# C = PC.read_curve()
+# PC.fitness(C)
+
+#+end_src
