@@ -1,0 +1,3 @@
+var documenterSearchIndex = {"docs":
+[{"location":"","page":"Home","title":"Home","text":"CurrentModule = SearchingTales","category":"page"},{"location":"#SearchingTales","page":"Home","title":"SearchingTales","text":"","category":"section"},{"location":"","page":"Home","title":"Home","text":"Documentation for SearchingTales.","category":"page"},{"location":"","page":"Home","title":"Home","text":"","category":"page"},{"location":"","page":"Home","title":"Home","text":"Modules = [SearchingTales]","category":"page"},{"location":"#SearchingTales.FubiniStudy","page":"Home","title":"SearchingTales.FubiniStudy","text":"FubiniStudy <: Metric\nrmse(x, y)\n\nFubini Study distance in complex projective plane PC^2\n\n\n\n\n\n","category":"type"}]
+}
