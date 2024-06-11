@@ -19,4 +19,6 @@ using Parameters
 
 include("Utils.jl")
 
+include("12Trips/12Trips.jl")
+
 end
