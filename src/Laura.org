@@ -24,11 +24,49 @@ X = collect(HC.@var x,y)
 using Revise
 import SearchingTales as PC
 PC.set_VARS(X)
-PC.set_CH_System(PC.System_dense());
+# PC.set_CH_System(PC.System_dense());
 #+end_src
 
 ** Testing
+*** Evolutionary (working on a06)
+**** Options
+#+begin_src julia
+import Evolutionary as EE
+options = EE.Options(iterations=500,
+                     show_trace=true,
+                     show_every=1,
+                     parallelization=:thread,
+                     # parallelization=:serial,
+                     );
 
+ga = EE.GA(populationSize = 50,
+           crossoverRate = 0.7,
+           # mutationRate = 0.3,
+           # selection = uniformranking(5),
+           # selection = EE.tournament(33),
+           # Positive integer specifies how many individuals in the current to survive to the next generation. Floating number specifies fraction of
+           epsilon = 0.7,
+           crossover = PC.hyper_crossover(randn),
+           mutation = PC.hyper_mutate(0.6, 5e-1),
+           );
+#+end_src
+
+**** Initial curve
+#+begin_src julia
+C = PC.randcurve(); PC.complexfy(C)
+
+_fit = PC.Fitness(C)
+ # _fit = PC.fitness
+#+end_src
+
+**** Optimize fit
+#+begin_src julia
+res = EE.optimize(_fit,
+                  C,
+                  ga,
+                  options,
+                  )
+#+end_src
 ** Compute everything for each
 *** Pre-
 #+begin_src julia
@@ -117,9 +155,10 @@ C_subopt = sol.u # Important!!
 # PC.empty_dict!(); individual = PC.randcurve();
 # PC.empty_dict!();
 
-C = PC.randcurve();
+C = PC.randcurve(); PC.complexfy(C)
 
-PC.complexfy(C)
+_fit = PC.Fitness(C)
+ _fit = PC.fitness
 # C = PC.read_curve()
 
 # Now curves are vectors of floats
@@ -137,7 +176,7 @@ ga = EE.GA(populationSize = 50,
            mutation = PC.hyper_mutate(0.6, 5e-1),
            );
 
-res = EE.optimize(PC.fitness,
+res = EE.optimize(_fit,
                   C,
                   ga,
                   options,
