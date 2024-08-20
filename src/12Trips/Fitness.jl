@@ -4,24 +4,24 @@
 
 # HC_multiplepoints(solutions; atol = 0) = unique_multiplepoints(solutions; atol > 0 ? atol : 1e2*accuracy)
 
-function fitness(curve::AbstractVector{<:Real};
-                 nodes = get_nodes(curve),
-                 M = get_distances(nodes),
-                 partition = get_partition(M),
-                 kwargs...)
-    # M = DD.pairwise(DIST[], reduce(hcat, nodes), dims = 2)
-    # println("Fit: Nodes, M, T computed!", nodes, " ", M, " ", partition)
-    # println("Fit: Nodes, M, T computed!", " ", M, " ")
-    # multiplepoints, partition = newcurve_params(curve; kwargs...)
-    # nodes, partition = get_info(DICT[], curve)
-    return fitness_perimeter(partition, M)
-end
+# function fitness(curve::AbstractVector{<:Real};
+#                  nodes = get_nodes(curve),
+#                  M = get_distances(nodes),
+#                  partition = get_partition(M),
+#                  kwargs...)
+#     # M = DD.pairwise(DIST[], reduce(hcat, nodes), dims = 2)
+#     # println("Fit: Nodes, M, T computed!", nodes, " ", M, " ", partition)
+#     # println("Fit: Nodes, M, T computed!", " ", M, " ")
+#     # multiplepoints, partition = newcurve_params(curve; kwargs...)
+#     # nodes, partition = get_info(DICT[], curve)
+#     return total_perimeter(partition, M)
+# end
 
-fitness(curve::AbstractVector{<:Real}, partition; kwargs...) = fitness(curve;
-                                                                       partition = partition,
-                                                                       kwargs...)
+# fitness(curve::AbstractVector{<:Real}, partition; kwargs...) = fitness(curve;
+#                                                                        partition = partition,
+#                                                                        kwargs...)
 
-function fitness_perimeter(triangles, M)
+function total_perimeter(triangles, M)
     loss = zero(eltype(M))
     for T in triangles
         # triangle = filter!(!isnothing, nodes[T])
@@ -37,21 +37,36 @@ end
 # Working with a fix partition.
 # We store it in a callable struct 'Fitness'
 
-struct Fitness
+struct Fitness{T}
+    curve::Vector{Float64}
     partition::Vector{Vector{Int}}
-    Fitness(partition::Vector{Vector{Int}}) = new(partition)
+    multiplepoints::Vector{Vector{ComplexF64}}
+    F::T
+    # Fitness(partition::Vector{Vector{Int}}) = new(partition)
 end
 
-function Fitness(curve::AbstractVector{<:Real})
-    nodes = get_nodes(curve)
+function Fitness(curve::AbstractVector{<:Real}, variables = VARS[]; kwargs...)
+    F = diagonal_system(curve, nothing, variables)
+    multiplepoints = get_multiplepoints(curve, variables, F; kwargs...)
+    nodes = eval_nodes(curve, multiplepoints)
     M = get_distances(nodes)
-    return Fitness(get_partition(M))
+    return Fitness(curve, get_partition(M), multiplepoints, F)
 end
 
-
-function (f::Fitness)(curve::AbstractVector{<:Real};
-                      nodes = get_nodes(curve),
-                      M = get_distances(nodes),
-                      kwargs...)
-    return fitness_perimeter(f.partition, M)
+function (f::Fitness)(curve::AbstractVector{<:Real}; kwargs...)
+    # multiplepoints = track_multiplepoints(f.multiplepoints, f.F, curve; kwargs...)
+    # multiplepoints = get_multiplepoints(curve; kwargs...)
+    multiplepoints = track_multiplepoints_flat(f.curve, curve, f.multiplepoints)
+    nodes = eval_nodes(curve, multiplepoints)
+    # println(_dehomo.(nodes))
+    M = get_distances(nodes)
+    return total_perimeter(f.partition, M), nodes
 end
+
+function Base.print(io::IO, f::Fitness, kwargs...)
+    print(io, "┌Partition:\n")
+    print(io, f.partition)
+    print(io, kwargs...)
+end
+
+Base.show(io::IO, ::MIME"text/plain", f::Fitness) = Base.print(io, f)

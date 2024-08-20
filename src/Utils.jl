@@ -2,11 +2,13 @@
 ##
 ##
 
+hstack(A) = reduce(hcat, A)
+vstack(A) = reduce(vcat, A)
 
 ## - Polynomials are represented as vectors of coefficients.
 ## - Arrays of polynomials are represented as a single vector of the concatenated coefficients.
 complexfy(v) = [x + y*im for (x,y) in zip(v[begin:2:end], v[(begin+1):2:end])]
-curve_to_polys(curve::AbstractVector{<:Real}) = complexfy.(Iterators.partition(curve, (2 * DIM)))
+curve_to_polys(curve::AbstractVector) = complexfy.(Iterators.partition(curve, (2 * DIM)))
 evalcurve(curve::AbstractVector{<:Real}, coordinate::T) where {T<:Number} =
     evalpoly.([coordinate], curve_to_polys(curve))
 
@@ -66,7 +68,8 @@ function uniquetol(f::Function, A::AbstractArray{T}, ::Type{S}=typeof(f(first(A)
 end
 uniquetol(A; kwargs...) = uniquetol(identity, A, eltype(A); kwargs...)
 
-sort_byreal(x, y) = real(x) < real(y) ? [x, y] : [y, x]
+real1(x, y) = real(first(x)) < real(first(y))
+sort_byreal!(V) = sort!(V, lt = real1)
 
 function _solve_onlynonsingular(args...;
                                 nonsingular_solutions = Vector{ComplexF64}[],
@@ -78,7 +81,7 @@ function _solve_onlynonsingular(args...;
     function areallfound(path)
         arethey = false
         if HC.is_nonsingular(path)
-            sol = sort_byreal(HC.solution(path)...)
+            sol = sort_byreal!(HC.solution(path))
             tol = rtol * HC.accuracy(path)
             isnew = !(intol(sol, nonsingular_solutions; atol=tol))
             if isnew
@@ -90,5 +93,5 @@ function _solve_onlynonsingular(args...;
     end
     _solve(args...; stop_early_cb=areallfound, kwargs...)
     # return nonsing_solutions
-    return sort(nonsingular_solutions; lt=(x, y) -> real(first(x)) < real(first(y)))
+    return nonsingular_solutions
 end
