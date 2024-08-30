@@ -60,7 +60,8 @@ function (f::Fitness)(curve::AbstractVector{<:Real}; kwargs...)
     nodes = eval_nodes(curve, multiplepoints)
     # println(_dehomo.(nodes))
     M = get_distances(nodes)
-    return total_perimeter(f.partition, M), nodes
+    # return total_perimeter(f.partition, M), nodes
+    return total_perimeter(f.partition, M)
 end
 
 function Base.print(io::IO, f::Fitness, kwargs...)

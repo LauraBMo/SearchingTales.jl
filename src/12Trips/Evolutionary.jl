@@ -18,7 +18,7 @@ function hyper_mutate(rate = 0.6, gamma = 0.4)
     return mutate!
 end
 
-function hyper_crossover(a = () -> 0.3, b = () -> 1. - a())
+function hyper_crossover(a = () -> rand(), b = () -> 1. - a())
     function crossover(curve1::AbstractVector, curve2::AbstractVector; kwargs...)
         @debug "CrossOver:"
         child1 = a()*curve1 .+ b()*curve2

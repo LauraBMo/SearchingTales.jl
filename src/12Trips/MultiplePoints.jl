@@ -121,33 +121,34 @@ function track_multiplepoints_flat(curve_init, curve_end, multiplepoints; kwargs
         only_finite=true,
         multiple_results=false,
     )
-    return sort_byreal!(out)
+    # return sort_byreal!(out)
+    return out
 end
 
-function track_multiplepoints(multiplepoints, F, curve_new; kwargs...)
-    G = diagonal_system(curve_new)
-    homotopy = HC.StraightLineHomotopy(G, F; gamma=randn())
-    result = _solve(homotopy, multiplepoints;
-                    # seed=0x75a6a462,
-                    kwargs...)
-    println(result)
-    # println(HC.solutions(result;
-    #     only_real=false,
-    #     real_tol=1e-6,
-    #     only_nonsingular=false,
-    #     only_singular=false,
-    #     only_finite=false,
-    #     multiple_results=false,
-    # ))
-    return HC.solutions(result;
-        only_real=false,
-        real_tol=1e-6,
-        only_nonsingular=false,
-        only_singular=false,
-        only_finite=true,
-        multiple_results=false,
-    )
-end
+# function track_multiplepoints(multiplepoints, F, curve_new; kwargs...)
+#     G = diagonal_system(curve_new)
+#     homotopy = HC.StraightLineHomotopy(G, F; gamma=randn())
+#     result = _solve(homotopy, multiplepoints;
+#                     # seed=0x75a6a462,
+#                     kwargs...)
+#     println(result)
+#     # println(HC.solutions(result;
+#     #     only_real=false,
+#     #     real_tol=1e-6,
+#     #     only_nonsingular=false,
+#     #     only_singular=false,
+#     #     only_finite=false,
+#     #     multiple_results=false,
+#     # ))
+#     return HC.solutions(result;
+#         only_real=false,
+#         real_tol=1e-6,
+#         only_nonsingular=false,
+#         only_singular=false,
+#         only_finite=true,
+#         multiple_results=false,
+#     )
+# end
 
 eval_nodes(curve, multiplepoints) =
     LA.normalize.(evalcurve.([curve], first.(multiplepoints)))
