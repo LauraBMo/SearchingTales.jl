@@ -68,7 +68,7 @@ function uniquetol(f::Function, A::AbstractArray{T}, ::Type{S}=typeof(f(first(A)
 end
 uniquetol(A; kwargs...) = uniquetol(identity, A, eltype(A); kwargs...)
 
-real1(x, y) = real(first(x)) < real(first(y))
+real1(X...) = <((real∘first).(X)...) # real(first(x)) < real(first(y))
 sort_byreal!(V) = sort!(V, lt = real1)
 
 function _solve_onlynonsingular(args...;

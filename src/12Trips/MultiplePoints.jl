@@ -8,8 +8,8 @@
 Returns the coefficitens to the equations ... in a matrix.
 
 Given variables x,y and polynomials w/o common roots:
-P(x) = a_0 + a_1*x ... + a_n*x^n ≅ [a_0,a_1,..,a_n]
-Q(x) = b_0 + b_1*x + ...+ b_n*x^n ≅ [b_0,b_1,..,b_n]
+P(x) = a_0 + a_1*x ... + a_n*x^n ≅ [a_0,a_1,..,a_n] = v
+Q(x) = b_0 + b_1*x + ...+ b_n*x^n ≅ [b_0,b_1,..,b_n] = u
 Then, entries of M are the coefficients of the polynomial:
 P(x)Q(y) - P(y)Q(x) = sum(M[i,j]*x^(i-1)*y^(j-1), i, j)
 That is, M == 0 iff [P(x) : Q(x)] = [P(y) : Q(y)]
@@ -55,7 +55,6 @@ function SupportIndices end
 SupportIndices(axes::Tuple) = collect.(Iterators.product([0:(i-1) for i in axes]...))
 SupportIndices(A::AbstractArray) = SupportIndices(size(A))
 
-
 function diagonal_polys(polys)
     coeffs = diagonal_coeffs(polys)
     exponents = SupportIndices(coeffs)
@@ -93,7 +92,7 @@ get_multiplepoints(curve, variables=VARS[], F=diagonal_system(curve, nothing, va
    sort_byreal!(_solve_onlynonsingular(F; kwargs...))
 
 function param_curve(curve_init, curve_end, param; gamma=randn())
-    return gamma*(param.*curve_init) + (1-param)*curve_end
+    return gamma * (param .* curve_init) + (1 - param) * curve_end
 end
 
 function track_multiplepoints_flat(curve_init, curve_end, multiplepoints; kwargs...)

@@ -4,7 +4,7 @@ const NVAR = 2
 ## Degree of the curve
 const DEG = 10
 
-const CH_System = Ref{HC.System}()
+# const CH_System = Ref{HC.System}()
 
 ## Dimension space of each parameter polynomial
 const DIM = binomial(DEG+NVAR-1, NVAR-1)
