@@ -66,8 +66,12 @@ end
 
 function Base.print(io::IO, f::Fitness, kwargs...)
     print(io, "┌Partition:\n")
-    print(io, f.partition)
-    print(io, kwargs...)
+    l = 3; i = 1
+    while i < l+1
+        print(io, f.partition[i:l:end], "\n")
+        i += 1
+    end
+    !(isempty(kwargs)) && print(io, kwargs)
 end
 
 Base.show(io::IO, ::MIME"text/plain", f::Fitness) = Base.print(io, f)
