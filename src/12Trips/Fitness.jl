@@ -45,9 +45,9 @@ struct Fitness{T}
     # Fitness(partition::Vector{Vector{Int}}) = new(partition)
 end
 
-function Fitness(curve::AbstractVector{<:Real}, variables = VARS[]; kwargs...)
-    F = diagonal_system(curve, nothing, variables)
-    multiplepoints = get_multiplepoints(curve, variables, F; kwargs...)
+function Fitness(curve::AbstractVector{<:Real}; kwargs...)
+    F = diagonal_system(curve)
+    multiplepoints = get_multiplepoints(curve, F; kwargs...)
     nodes = eval_nodes(curve, multiplepoints)
     M = get_distances(nodes)
     return Fitness(curve, get_partition(M), multiplepoints, F)

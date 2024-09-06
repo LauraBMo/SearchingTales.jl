@@ -64,7 +64,7 @@ function diagonal_polys(polys)
     return hstack(first.(out)), last.(out)
 end
 
-function diagonal_system(curve, parameters=nothing, variables=VARS[])
+function diagonal_system(curve; kwargs...)
     # println(parameters, variables)
     supps_coeffs = diagonal_polys.(CC.combinations(curve_to_polys(curve), 2))
     supps, coeffs = first.(supps_coeffs), last.(supps_coeffs)
@@ -72,24 +72,18 @@ function diagonal_system(curve, parameters=nothing, variables=VARS[])
     # println("Supports: ", typeof(supps_coeffs))# ", matrix sizes: ", supps_coeffs)
     # println("Coefficients: ", coeffs)
     # println(parameters, variables)
-    F =
-        if isnothing(parameters)
-            HC.System(supps, coeffs; variables=variables)
-        else
-            HC.System(supps, coeffs;
-                      variables=variables,
-                      parameters=parameters,
-                      )
-        end
-    return F
+    # _kwargs = [  ]
+    # !(isnothing(parameters)) && push!(_kwargs, :parameters => parameters)
+    # append!(_kwargs, kwargs)
+    return HC.System(supps, coeffs; variables=VARS[], kwargs...)
 end
 # dense_support(axes::Tuple) = reduce(hcat, vec(SupportIndices(axes)))
 # # dense_support(i::Int) = dense_support((i, i))
 # dense_support(A::AbstractArray) = dense_support(size(A))
 
 
-get_multiplepoints(curve, variables=VARS[], F=diagonal_system(curve, nothing, variables); kwargs...) =
-   sort_byreal!(_solve_onlynonsingular(F; kwargs...))
+get_multiplepoints(curve, F=diagonal_system(curve); kwargs...) =
+    sort_byreal!(_solve_onlynonsingular(F; kwargs...))
 
 function param_curve(curve_init, curve_end, param; gamma=randn())
     return gamma * (param .* curve_init) + (1 - param) * curve_end
@@ -98,11 +92,11 @@ end
 function track_multiplepoints_flat(curve_init, curve_end, multiplepoints; kwargs...)
     t = HC.Variable(gensym(:t))
     Ct = param_curve(curve_init, curve_end, t)
-    Gt = diagonal_system(Ct, [t])
+    Gt = diagonal_system(Ct; parameters = [t], kwargs...)
     homotopy = HC.ParameterHomotopy(HC.fixed(Gt; compile=false), [1.0], [0.0])
     result = _solve(homotopy, multiplepoints;
-                    # seed=0x75a6a462,
-                    kwargs...)
+        # seed=0x75a6a462,
+        kwargs...)
     # println(result)
     # println(HC.solutions(result;
     #     only_real=false,
@@ -152,8 +146,8 @@ end
 eval_nodes(curve, multiplepoints) =
     LA.normalize.(evalcurve.([curve], first.(multiplepoints)))
 
-function get_nodes(curve, variables=VARS[], F=diagonal_system(curve, variables); kwargs...)
-    multiplepoints = get_multiplepoints(curve, variables, F; kwargs...)
+function get_nodes(curve, F=diagonal_system(curve); kwargs...)
+    multiplepoints = get_multiplepoints(curve, F; kwargs...)
     return eval_nodes(curve, multiplepoints)
 end
 
