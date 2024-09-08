@@ -37,11 +37,11 @@ end
 # Working with a fix partition.
 # We store it in a callable struct 'Fitness'
 
-struct Fitness{T}
+struct Fitness
     curve::Vector{Float64}
     partition::Vector{Vector{Int}}
     multiplepoints::Vector{Vector{ComplexF64}}
-    F::T
+    # F::T
     # Fitness(partition::Vector{Vector{Int}}) = new(partition)
 end
 
@@ -50,7 +50,7 @@ function Fitness(curve::AbstractVector{<:Real}; kwargs...)
     multiplepoints = get_multiplepoints(curve, F; kwargs...)
     nodes = eval_nodes(curve, multiplepoints)
     M = get_distances(nodes)
-    return Fitness(curve, get_partition(M), multiplepoints, F)
+    return Fitness(curve, get_partition(M), multiplepoints)
 end
 
 function (f::Fitness)(curve::AbstractVector{<:Real}; kwargs...)
