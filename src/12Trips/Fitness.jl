@@ -47,6 +47,7 @@ end
 
 function Fitness(curve::AbstractVector{<:Real}; kwargs...)
     F = diagonal_system(curve)
+    @debug "Computing Fitness, getting multiple points."
     multiplepoints = get_multiplepoints(curve, F; kwargs...)
     nodes = eval_nodes(curve, multiplepoints)
     M = get_distances(nodes)
@@ -56,6 +57,7 @@ end
 function (f::Fitness)(curve::AbstractVector{<:Real}; kwargs...)
     # multiplepoints = track_multiplepoints(f.multiplepoints, f.F, curve; kwargs...)
     # multiplepoints = get_multiplepoints(curve; kwargs...)
+    @debug "Computing Fitness, traking points."
     multiplepoints = track_multiplepoints_flat(f.curve, curve, f.multiplepoints)
     nodes = eval_nodes(curve, multiplepoints)
     # println(_dehomo.(nodes))

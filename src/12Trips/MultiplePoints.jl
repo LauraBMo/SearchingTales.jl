@@ -93,7 +93,9 @@ function track_multiplepoints_flat(curve_init, curve_end, multiplepoints; kwargs
     t = HC.Variable(gensym(:t))
     Ct = param_curve(curve_init, curve_end, t)
     Gt = diagonal_system(Ct; parameters = [t], kwargs...)
+    @debug "Traking, system set, building homotopy."
     homotopy = HC.ParameterHomotopy(HC.fixed(Gt; compile=false), [1.0], [0.0])
+    @debug "Solving..."
     result = _solve(homotopy, multiplepoints;
         # seed=0x75a6a462,
         kwargs...)
@@ -106,6 +108,7 @@ function track_multiplepoints_flat(curve_init, curve_end, multiplepoints; kwargs
     #     only_finite=false,
     #     multiple_results=false,
     # ))
+    @debug "Solved"
     out = HC.solutions(result;
         only_real=false,
         real_tol=1e-6,
