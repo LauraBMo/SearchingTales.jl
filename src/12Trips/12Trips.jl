@@ -50,6 +50,20 @@ function HC.ModelKit.monomials_exponents(n::Int, d::Int; affine::Bool = false)
     E
 end
 
+function _solve_onlynonsingular(args...; kwargs...)
+    # println("Solving multiple points...")
+    # println("Args: ", args)
+    nsolutions = 0
+    top = 72
+    function areallfound(path)
+        if HC.is_nonsingular(path)
+            nsolutions += 1
+        end
+        return !(nsolutions < top)
+    end
+    result = _solve(args...; stop_early_cb=areallfound, kwargs...)
+    return HC.unique_points(HC.solutions(result); group_action = _flip)
+end
 
 # include("Utils.jl") ## Included in main
 ## Compute parameters for the multiple points of a parametric curve.

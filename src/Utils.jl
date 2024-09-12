@@ -72,27 +72,3 @@ uniquetol(A; kwargs...) = uniquetol(identity, A, eltype(A); kwargs...)
 real1(X...) = <((real∘first).(X)...) # real(first(x)) < real(first(y))
 sort_byreal!(V) = sort!(V, lt = real1)
 
-function _solve_onlynonsingular(args...;
-                                nonsingular_solutions = Vector{ComplexF64}[],
-                                nn = 35,
-                                rtol = 1e2,
-                                kwargs...)
-    # println("Solving multiple points...")
-    # println("Args: ", args)
-    function areallfound(path)
-        arethey = false
-        if HC.is_nonsingular(path)
-            sol = sort_byreal!(HC.solution(path))
-            tol = rtol * HC.accuracy(path)
-            isnew = !(intol(sol, nonsingular_solutions; atol=tol))
-            if isnew
-                push!(nonsingular_solutions, sol)
-                arethey = length(nonsingular_solutions) > nn
-            end
-        end
-        return arethey
-    end
-    _solve(args...; stop_early_cb=areallfound, kwargs...)
-    # return nonsing_solutions
-    return nonsingular_solutions
-end
