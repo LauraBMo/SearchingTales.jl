@@ -7,7 +7,7 @@ const DEG = 10
 # const CH_System = Ref{HC.System}()
 
 ## Dimension space of each parameter polynomial
-const DIM = binomial(DEG+NVAR-1, NVAR-1)
+const DIM = binomial(DEG+NVAR-1, NVAR-1) # 11
 ## Number of homogeneos coordinates in image
 const N = 3
 ## Does not work:

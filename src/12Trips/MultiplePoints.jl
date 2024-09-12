@@ -59,46 +59,54 @@ function diagonal_polys(polys)
     coeffs = diagonal_coeffs(polys)
     exponents = SupportIndices(coeffs)
     out = vec(collect(zip(exponents, coeffs)))
-    # out = Dict(exponents .=> coeffs_mat)
-    sort!(out, lt=HC.ModelKit.td_order, by=first)
+    # sort!(out, lt=HC.ModelKit.td_order, by=first)
     return hstack(first.(out)), last.(out)
 end
 
 function diagonal_system(curve; kwargs...)
-    # println(parameters, variables)
+    @debug "Final curve:" length(curve_to_polys(curve))
+    @debug "Combinations:" length(CC.combinations(curve_to_polys(curve), 2))
     supps_coeffs = diagonal_polys.(CC.combinations(curve_to_polys(curve), 2))
     supps, coeffs = first.(supps_coeffs), last.(supps_coeffs)
-    # println("Coeffs: ", typeof(coeffs), ", lengths: ", length.(coeffs))
-    # println("Supports: ", typeof(supps_coeffs))# ", matrix sizes: ", supps_coeffs)
-    # println("Coefficients: ", coeffs)
-    # println(parameters, variables)
-    # _kwargs = [  ]
-    # !(isnothing(parameters)) && push!(_kwargs, :parameters => parameters)
-    # append!(_kwargs, kwargs)
+    # @debug "Coeffs: ", typeof(coeffs), ", lengths: ", length.(coeffs)
+    # @debug "Supports: ", typeof(supps), ", matrix sizes: ", size.(supps)
+    # @debug "Coefficients: ", coeffs
     return HC.System(supps, coeffs; variables=VARS[], kwargs...)
 end
-# dense_support(axes::Tuple) = reduce(hcat, vec(SupportIndices(axes)))
-# # dense_support(i::Int) = dense_support((i, i))
-# dense_support(A::AbstractArray) = dense_support(size(A))
 
-
-get_multiplepoints(curve, F=diagonal_system(curve); kwargs...) =
+get_multiplepoints(curve, F = diagonal_system(curve); kwargs...) =
     sort_byreal!(_solve_onlynonsingular(F; kwargs...))
 
-function param_curve(curve_init, curve_end, param; gamma=randn())
-    return gamma * (param .* curve_init) + (1 - param) * curve_end
+
+## Get multiple-points via Monodromy
+
+
+
+
+## Track multiple-points of 'curve_init' to the ones of 'curve_end'
+## Build flat homotopy H(x,param)
+function param_system(curve_init, curve_end, param; gamma)
+    @debug "Param curve: " length(curve_init) length(curve_end)
+    param_curve = gamma .* (param .* curve_init) + (1 - param) .* curve_end
+    return diagonal_system(param_curve; parameters=[param])
 end
 
-function track_multiplepoints_flat(curve_init, curve_end, multiplepoints; kwargs...)
-    t = HC.Variable(gensym(:t))
-    Ct = param_curve(curve_init, curve_end, t)
-    Gt = diagonal_system(Ct; parameters = [t], kwargs...)
-    @debug "Traking, system set, building homotopy."
-    homotopy = HC.ParameterHomotopy(HC.fixed(Gt; compile=false), [1.0], [0.0])
+function track_multiplepoints_flat(curve_init, curve_end, multiplepoints;
+                                   gamma=randn(),
+                                   kwargs...)
+    @debug "Verbose debugging information.  Invisible by default"
+    @debug "Tracking multiplepoints (flat homotopy)"
+    @debug "Setting homotopy..."
+    param = HC.Variable(gensym(:t))
+    Gt = param_system(curve_init, curve_end, param; gamma=1.0)
+    # homotopy = HC.ParameterHomotopy(HC.fixed(Gt; compile=false), [1.0], [0.0])
+    # homotopy = HC.ParameterHomotopy(Gt, [1.0], [0.0])
+    homotopy = HC.Homotopy(HC.expressions(Gt), VARS[], param)
     @debug "Solving..."
-    result = _solve(homotopy, multiplepoints;
-        # seed=0x75a6a462,
-        kwargs...)
+    result = _solve(homotopy, multiplepoints; kwargs...)
+    # result = _solve(homotopy, multiplepoints;
+    #     # seed=0x75a6a462,
+    #     kwargs...)
     # println(result)
     # println(HC.solutions(result;
     #     only_real=false,
@@ -155,11 +163,13 @@ function get_nodes(curve, F=diagonal_system(curve); kwargs...)
 end
 
 function check_multiplepoint(curve, coordinates; kwargs...)
+    notindiag = !(isapprox(first(coordinates), last(coordinates)))
     pxs, pas = evalcurve.([curve], coordinates)
     # Are all the maximal minors px*qa-pa*qx zero?
-    return proj_eq(pxs, pas)
+    isoverlap = equal_projective(pxs, pas; kwargs...)
+    return notindiag && isoverlap
 end
 
 # Check multiple nodes (namely, the 36 of a random planar curve of degree 10)
-check_multiplepoints(curve, nodes; kwargs...) =
-    all(node -> check_multiplepoint(curve, node; kwargs...), nodes)
+check_multiplepoints(curve, multiplepoints; kwargs...) =
+    all(mp -> check_multiplepoint(curve, mp; kwargs...), multiplepoints)

@@ -3,7 +3,7 @@
 ######################
 ## Assume 'p' and 'q' have unitary length
 ## To bypass 'acos's safety error 'abs(x)>1'
-_acos(x) = abs(x) <= 1 ? acos(x) : zero(x)
+_acos(x) = abs(x) <= one(x) ? acos(x) : zero(x)
 _FubiniStudy(z::T) where {T<:Number} = (_acos∘LA.norm)(z)
 _FubiniStudy(p, q) = _FubiniStudy(LA.dot(p, q))
 

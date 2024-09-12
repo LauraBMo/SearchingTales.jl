@@ -8,7 +8,8 @@ vstack(A) = reduce(vcat, A)
 ## - Polynomials are represented as vectors of coefficients.
 ## - Arrays of polynomials are represented as a single vector of the concatenated coefficients.
 complexfy(v) = [x + y*im for (x,y) in zip(v[begin:2:end], v[(begin+1):2:end])]
-curve_to_polys(curve::AbstractVector) = complexfy.(Iterators.partition(curve, (2 * DIM)))
+curve_to_polys(curve) = collect.(Iterators.partition(complexfy(curve), DIM))
+# curve_to_polys(curve::AbstractVector{<:Complex}) = curve_to_polys(curve)
 evalcurve(curve::AbstractVector{<:Real}, coordinate::T) where {T<:Number} =
     evalpoly.([coordinate], curve_to_polys(curve))
 
@@ -36,7 +37,7 @@ end
 # So, v1,...,vn are the rows of a matrix, and we have less vectors than dimensions.
 maxminors(vectors...) = zip(CC.combinations.(vectors, length(vectors))...)
 isnull((px, py), (qx, qy); kwargs...) = isapprox(px * qy, py * qx; kwargs...)
-proj_eq(P, Q; kwargs...) = all(minor -> isnull(minor...; kwargs...), maxminors(P, Q))
+equal_projective(P, Q; kwargs...) = all(minor -> isnull(minor...; kwargs...), maxminors(P, Q))
 _dehomo(ppoint) = ppoint[begin:(end -1)]./last(ppoint)
 
 
