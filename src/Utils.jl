@@ -8,7 +8,8 @@ vstack(A) = reduce(vcat, A)
 ## - Polynomials are represented as vectors of coefficients.
 ## - Arrays of polynomials are represented as a single vector of the concatenated coefficients.
 complexfy(v) = [x + y*im for (x,y) in zip(v[begin:2:end], v[(begin+1):2:end])]
-curve_to_polys(curve) = collect.(Iterators.partition(complexfy(curve), DIM))
+splitDIM(curve) = collect.(Iterators.partition(curve, DIM))
+curve_to_polys(curve) = splitDIM(complexfy(curve))
 # curve_to_polys(curve::AbstractVector{<:Complex}) = curve_to_polys(curve)
 evalcurve(curve::AbstractVector{<:Real}, coordinate::T) where {T<:Number} =
     evalpoly.([coordinate], curve_to_polys(curve))
