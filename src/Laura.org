@@ -10,7 +10,8 @@ and all that.
 
 Planar curve of degree 10 with 12 triple points.
 
-** Packages
+** Testing
+*** Packages
 
 #+begin_src julia :results output
 # using Distances
@@ -24,11 +25,26 @@ X = collect(HC.@var x,y)
 using Revise
 import SearchingTales as PC
 PC.set_VARS(X)
+Threads.nthreads()
+ENV["JULIA_DEBUG"] = "SearchingTales"
 # PC.set_CH_System(PC.System_dense());
 #+end_src
 
-** Testing
 *** Evolutionary (working on a06)
+**** Initial curve
+#+begin_src julia
+C = PC.randcurve();
+_fit = PC.Fitness(C)
+ # _fit = PC.fitness
+# _fit(C)
+D = PC.randcurve();
+_fit(D)
+
+# HC.@var t
+# Ct = PC.param_curve(C, D, t)
+# Ft = PC.diagonal_system(Ct)
+#+end_src
+
 **** Options
 #+begin_src julia
 import Evolutionary as EE
@@ -46,26 +62,148 @@ ga = EE.GA(populationSize = 50,
            # selection = EE.tournament(33),
            # Positive integer specifies how many individuals in the current to survive to the next generation. Floating number specifies fraction of
            epsilon = 0.7,
-           crossover = PC.hyper_crossover(randn),
-           mutation = PC.hyper_mutate(0.6, 5e-1),
+           crossover = PC.hyper_crossover(),
+           mutation = PC.hyper_mutate(0.7, 5e-1),
            );
-#+end_src
-
-**** Initial curve
-#+begin_src julia
-C = PC.randcurve(); PC.complexfy(C)
-
-_fit = PC.Fitness(C)
- # _fit = PC.fitness
 #+end_src
 
 **** Optimize fit
 #+begin_src julia
 res = EE.optimize(_fit,
-                  C,
+                  D,
                   ga,
                   options,
                   )
+#+end_src
+*** Plotting curves' nodes
+**** Packages
+#+begin_src julia
+using Plots; pyplot()
+#+end_src
+**** Plotting
+
+#+begin_src julia
+C = PC.randcurve();
+# PC.plotnodes(C)
+
+_fit = PC.Fitness(C)
+D = PC.randcurve();
+#+end_src
+
+#+begin_src julia
+loss, nodes = _fit(D); loss
+unique([first(_fit(D)) for _ in 1:1000])
+#+end_src
+
+#+begin_src julia
+PC.plotnodes(nodes, _fit.partition)
+#+end_src
+** UAB Server
+*** Packages
+
+#+begin_src julia
+# using Distances
+# using Plots; pyplot()
+# import Combinatorics as CC
+
+import HomotopyContinuation as HC#, Nemo
+X = collect(HC.@var x,y)
+
+
+# using Revise
+import SearchingTales as PC
+PC.set_VARS(X)
+Threads.nthreads()
+# PC.set_CH_System(PC.System_dense());
+#+end_src
+*** Evolutionary
+**** Options
+#+begin_src julia
+import Evolutionary as EE
+options = EE.Options(iterations=1000,
+                     show_trace=true,
+                     show_every=1,
+                     parallelization=:thread,
+                     # parallelization=:serial,
+                     );
+
+ga = EE.GA(populationSize = 50,
+           crossoverRate = 0.7,
+           # mutationRate = 0.3,
+           # selection = uniformranking(5),
+           # selection = EE.tournament(33),
+           # Positive integer specifies how many individuals in the current to survive to the next generation. Floating number specifies fraction of
+           epsilon = 0.7,
+           crossover = PC.hyper_crossover(),
+           mutation = PC.hyper_mutate(0.7, 5e-1),
+           );
+#+end_src
+**** Initial curve
+
+#+begin_src julia
+C = PC.randcurve();
+_fit = PC.Fitness(C)
+ # _fit = PC.fitness
+# _fit(C)
+D = PC.randcurve();
+_fit(D)
+
+# HC.@var t
+# Ct = PC.param_curve(C, D, t)
+# Ft = PC.diagonal_system(Ct)
+#+end_src
+
+**** Optimize fit
+
+#+begin_src julia
+res = EE.optimize(_fit,
+                  D,
+                  ga,
+                  options,
+                  )
+#+end_src
+** Monodromy solve
+*** Packages
+
+#+begin_src julia
+# using Distances
+# using Plots; pyplot()
+# import Combinatorics as CC
+
+import HomotopyContinuation as HC#, Nemo
+X = collect(HC.@var x,y)
+
+
+# using Revise
+import SearchingTales as PC
+PC.set_VARS(X)
+Threads.nthreads()
+# PC.set_CH_System(PC.System_dense());
+#+end_src
+*** Monodromy
+
+#+begin_src julia
+import SearchingTales as PC
+using HomotopyContinuation
+@var x,y,a,b,c
+PC.set_VARS([x,y])
+
+CC = Vector{Expression}(undef, 33)
+CC .= PC.complexfy(PC.randcurve())
+params = [a,b,c]
+for i in 1:3 CC[11*(i-1)+rand(1:11)] = params[i] end
+
+F = PC.diagonal_system(CC; parameters = params)
+C = PC.randcurve()
+_fit = PC.Fitness(C)
+ # _fit = PC.fitness
+# # _fit(C)
+# D = PC.randcurve();
+# _fit(D)
+
+# HC.@var t
+# Ct = PC.param_curve(C, D, t)
+# Ft = PC.diagonal_system(Ct)
 #+end_src
 ** Compute everything for each
 *** Pre-
