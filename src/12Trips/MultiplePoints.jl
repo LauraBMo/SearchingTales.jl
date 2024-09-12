@@ -97,11 +97,13 @@ function track_multiplepoints_flat(curve_init, curve_end, multiplepoints;
     @debug "Verbose debugging information.  Invisible by default"
     @debug "Tracking multiplepoints (flat homotopy)"
     @debug "Setting homotopy..."
-    param = HC.Variable(gensym(:t))
+    # param = HC.Variable(gensym(:t))
+    param = PARAM[]
+    vars = VARS[]
     Gt = param_system(curve_init, curve_end, param; gamma=1.0)
-    # homotopy = HC.ParameterHomotopy(HC.fixed(Gt; compile=false), [1.0], [0.0])
+    homotopy = HC.ParameterHomotopy(HC.fixed(Gt; compile=false), [1.0], [0.0])
     # homotopy = HC.ParameterHomotopy(Gt, [1.0], [0.0])
-    homotopy = HC.Homotopy(HC.expressions(Gt), VARS[], param)
+    # homotopy = HC.Homotopy(HC.expressions(Gt), vars, param)
     @debug "Solving..."
     result = _solve(homotopy, multiplepoints; kwargs...)
     # result = _solve(homotopy, multiplepoints;

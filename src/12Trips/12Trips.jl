@@ -13,11 +13,16 @@ const N = 3
 ## Does not work:
 # const X = Ref{Vector{HC.Variable}}([HC.Variable(:x), HC.Variable(:a)])
 const VARS = Ref{Vector{HC.Variable}}()
+const PARAM = Ref{HC.Variable}()
 
 const DIST = Ref{DD.Metric}()
 
 function set_VARS(variables)
     VARS[] = variables
+end
+
+function set_PARAM(param)
+    PARAM[] = param
 end
 
 function set_metric(distance)
