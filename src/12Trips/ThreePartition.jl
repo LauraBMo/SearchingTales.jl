@@ -58,3 +58,6 @@ function sorted_edges(M::AbstractMatrix)
 end
 
 get_partition(M::AbstractMatrix) = get_partition!(sorted_edges(M))
+
+get_partition(curve, multiplepoints) =
+    get_partition(get_distances(eval_nodes(curve, multiplepoints)))
