@@ -59,7 +59,7 @@ function _solve_onlynonsingular(args...; kwargs...)
     # println("Solving multiple points...")
     # println("Args: ", args)
     nsolutions = 0
-    top = 72
+    top = 71 # The last solution must be already there.
     function areallfound(path)
         if HC.is_nonsingular(path)
             nsolutions += 1
