@@ -72,3 +72,5 @@ uniquetol(A; kwargs...) = uniquetol(identity, A, eltype(A); kwargs...)
 real1(X...) = <((real∘first).(X)...) # real(first(x)) < real(first(y))
 sort_byreal!(V) = sort!(V, lt = real1)
 
+
+_flip(pair) = [last(pair), first(pair)]
