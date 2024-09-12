@@ -47,9 +47,17 @@ end
 
 function Fitness(curve::AbstractVector{<:Real}; kwargs...)
     F = diagonal_system(curve)
-    @debug "Computing Fitness, getting multiple points."
+    @debug "Verbose debugging information.  Invisible by default"
+    @debug "Computing fit function for curve."
+    @debug "Getting multiple points..."
     multiplepoints = get_multiplepoints(curve, F; kwargs...)
+    @debug "Eval nodes..."
     nodes = eval_nodes(curve, multiplepoints)
+    @debug begin
+        arenodes = check_multiplepoints(curve, multiplepoints)
+        "Nodes checked: $(arenodes)"
+    end
+    @debug "Distances..."
     M = get_distances(nodes)
     return Fitness(curve, get_partition(M), multiplepoints)
 end
@@ -57,12 +65,21 @@ end
 function (f::Fitness)(curve::AbstractVector{<:Real}; kwargs...)
     # multiplepoints = track_multiplepoints(f.multiplepoints, f.F, curve; kwargs...)
     # multiplepoints = get_multiplepoints(curve; kwargs...)
-    @debug "Computing Fitness, traking points."
+    @debug "Verbose debugging information.  Invisible by default"
+    @debug "Computing curve's fitness:"
+    @debug "Traking multiplepoints..."
     multiplepoints = track_multiplepoints_flat(f.curve, curve, f.multiplepoints)
+    @debug "Eval to get nodes..."
     nodes = eval_nodes(curve, multiplepoints)
+    @debug begin
+        arenodes = check_multiplepoints(curve, multiplepoints)
+        "Nodes checked: $(arenodes)"
+    end
     # println(_dehomo.(nodes))
+    @debug "Distances..."
     M = get_distances(nodes)
     # return total_perimeter(f.partition, M), nodes
+    @debug "Perimeter..."
     return total_perimeter(f.partition, M)
 end
 

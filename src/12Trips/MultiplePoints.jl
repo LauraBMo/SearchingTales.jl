@@ -116,15 +116,16 @@ function track_multiplepoints_flat(curve_init, curve_end, multiplepoints;
     #     only_finite=false,
     #     multiple_results=false,
     # ))
-    @debug "Solved"
-    out = HC.solutions(result;
-        only_real=false,
-        real_tol=1e-6,
-        only_nonsingular=true,
-        only_singular=false,
-        only_finite=true,
-        multiple_results=false,
-    )
+    # out = HC.solutions(result;
+    #     only_real=false,
+    #     # real_tol=1e-6,
+    #     only_nonsingular=true,
+    #     only_singular=false,
+    #     only_finite=true,
+    #     multiple_results=false,
+    # )
+    out = HC.solutions(result)
+    @debug "Solved! Solutions: $(length(out))"
     # return sort_byreal!(out)
     return out
 end
