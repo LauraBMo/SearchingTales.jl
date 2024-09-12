@@ -14,6 +14,7 @@ const N = 3
 # const X = Ref{Vector{HC.Variable}}([HC.Variable(:x), HC.Variable(:a)])
 const VARS = Ref{Vector{HC.Variable}}()
 const PARAM = Ref{HC.Variable}()
+const PARAMS_END = Ref{Vector{HC.Variable}}()
 
 const DIST = Ref{DD.Metric}()
 
@@ -24,6 +25,11 @@ end
 function set_PARAM(param)
     PARAM[] = param
 end
+
+function set_PARAMS_END(params)
+    PARAMS_END[] = params
+end
+
 
 function set_metric(distance)
     DIST[] = distance
@@ -68,6 +74,17 @@ function _solve_onlynonsingular(args...; kwargs...)
     end
     result = _solve(args...; stop_early_cb=areallfound, kwargs...)
     return HC.unique_points(HC.solutions(result); group_action = _flip)
+end
+
+## From HomotopyContinuation.jl; model_kit/symbolic.jl::1128
+function build_system(support, coefficients, variables)
+    map(support, coefficients) do A, c
+        fi = HC.Expression(0)
+        for (k, a) in enumerate(eachcol(A))
+            HC.ModelKit.add!(fi, fi, c[k] * prod(variables .^ convert.(Int, a)))
+        end
+        fi
+    end
 end
 
 # include("Utils.jl") ## Included in main
