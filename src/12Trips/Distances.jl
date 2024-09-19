@@ -17,7 +17,9 @@ struct FubiniStudy <: DD.Metric end
 evaluate(::FubiniStudy, a, b) = _FubiniStudy(a, b)
 (::FubiniStudy)(a, b) = _FubiniStudy(a, b)
 
-get_distances(normal_nodes) = DD.pairwise(DIST[], normal_nodes)
+get_distances(nodes) = DD.pairwise(DIST[], nodes)
+get_distances(curve, multiplepoints) =
+    get_distances(eval_nodes(curve, multiplepoints))
 
 ######################
 ### Pairwise distances

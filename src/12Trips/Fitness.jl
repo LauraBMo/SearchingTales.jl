@@ -45,7 +45,7 @@ struct Fitness
     # Fitness(partition::Vector{Vector{Int}}) = new(partition)
 end
 
-function Fitness(curve::AbstractVector{<:Real}; kwargs...)
+function Fitness(curve::AbstractVector{<:Real} = randcurve(); kwargs...)
     F = diagonal_system(curve)
     @debug "Verbose debugging information.  Invisible by default"
     @debug "Computing fit function for curve."
