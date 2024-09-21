@@ -103,8 +103,8 @@ function param_param_system(curve_init, curve_params, param; gamma)
     supps, coeffs = first.(supps_coeffs), last.(supps_coeffs)
     exprs = HC.horner.(build_system(supps, coeffs, VARS[]), [curve_params])
     homotopy = HC.Homotopy(exprs, VARS[], param, curve_params)
-    # @debug "Coeffs: ", typeof(coeffs), ", lengths: ", length.(coeffs)
-    # @debug "Supports: ", typeof(supps), ", matrix sizes: ", size.(supps)
+    @debug "Coeffs: ", typeof(coeffs), ", lengths: ", length.(coeffs)
+    @debug "Supports: ", typeof(supps), ", matrix sizes: ", size.(supps)
     # @debug "Coefficients: ", coeffs
     # HC.System(supps, coeffs; variables=VARS[], kwargs...)
     # _parameters = curve_params; pushfirst!(_parameters, param)
@@ -132,6 +132,9 @@ function FastFitness(curve::AbstractVector{<:Real} = randcurve(); kwargs...)
     partition = get_partition(curve, multiplepoints)
     # tracker(newcurve) = track_multiplepoints_flat(curve, newcurve, multiplepoints)
     homotopy = param_param_system(complexfy(curve), PARAMS_END[], PARAM[]; gamma = randn())
+    nodes = eval_nodes(curve, multiplepoints)
+    M = get_distances(nodes)
+    @debug "Perimeter...", total_perimeter(partition, M)
     return FastFitness(partition, multiplepoints, homotopy)
 end
 
@@ -143,10 +146,11 @@ function (ffit::FastFitness)(newcurve::AbstractVector{<:Real}; kwargs...)
     @debug "Traking multiplepoints..."
     homo = HC.fix_parameters(ffit.param_homotopy, newcurve; compile = :all)
     ## :all, :none, :mixed
-    newmultiplepoints = HC.solutions(_solve(homo, ffit.multiplepoints; kwargs...))
+    result = _solve(homo, ffit.multiplepoints; kwargs...)
+    newmultiplepoints = HC.solutions(result)
     @debug begin
         arenodes = check_multiplepoints(newcurve, newmultiplepoints)
-        "Nodes checked: $(arenodes)"
+        "Nodes checked: $(arenodes)", result
     end
     # println(_dehomo.(nodes))
     @debug "Distances..."
