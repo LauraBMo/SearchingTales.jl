@@ -17,17 +17,21 @@ Planar curve of degree 10 with 12 triple points.
 # using Distances
 # using Plots; pyplot()
 # import Combinatorics as CC
-
+enable_autocomplete_brackets(false)
 import HomotopyContinuation as HC#, Nemo
-X = collect(HC.@var x,y)
-
+HC.@var x, y, t
+X = [x, y]
+HC.@var A[1:33]
 
 using Revise
 import SearchingTales as PC
 PC.set_VARS(X)
+PC.set_PARAM(t)
+PC.set_PARAMS_END(A);
 Threads.nthreads()
 ENV["JULIA_DEBUG"] = "SearchingTales"
 # PC.set_CH_System(PC.System_dense());
+enable_autocomplete_brackets(true)
 #+end_src
 
 *** Evolutionary (working on a06)
@@ -69,7 +73,7 @@ ga = EE.GA(populationSize = 50,
 
 **** Optimize fit
 #+begin_src julia
-res = EE.optimize(_fit,
+res = EE.optimize(_sfit,
                   D,
                   ga,
                   options,
@@ -98,29 +102,24 @@ unique([first(_fit(D)) for _ in 1:1000])
 #+begin_src julia
 PC.plotnodes(nodes, _fit.partition)
 #+end_src
-** UAB Server
-*** Packages
+*** Build homotopy system
+**** Setting
 
 #+begin_src julia
-# using Distances
-# using Plots; pyplot()
-# import Combinatorics as CC
+# HC.COMPILE_DEFAULT[] = :none
+C = PC.randcurve();
+# _fit = PC.Fitness(C)
+_sfit = PC.FastFitness(C)
 
-import HomotopyContinuation as HC#, Nemo
-X = collect(HC.@var x,y)
-
-
-# using Revise
-import SearchingTales as PC
-PC.set_VARS(X)
-Threads.nthreads()
-# PC.set_CH_System(PC.System_dense());
+D = PC.randcurve();
+# _fit(D)
+_sfit(D)
 #+end_src
-*** Evolutionary
 **** Options
+
 #+begin_src julia
 import Evolutionary as EE
-options = EE.Options(iterations=1000,
+options = EE.Options(iterations=500,
                      show_trace=true,
                      show_every=1,
                      parallelization=:thread,
@@ -138,25 +137,96 @@ ga = EE.GA(populationSize = 50,
            mutation = PC.hyper_mutate(0.7, 5e-1),
            );
 #+end_src
+**** Optimize fit
+#+begin_src julia
+res = EE.optimize(_sfit,
+                  D,
+                  ga,
+                  options,
+                  )
+#+end_src
+*** BenchMarks
+
+julia> @benchmark _fit(PC.randcurve())
+BenchmarkTools.Trial: 30 samples with 1 evaluation.
+ Range (min … max):  157.891 ms … 230.435 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     165.034 ms               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   167.237 ms ±  13.170 ms  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+    ▅█▅ █▅▂
+  ▅▁███▅███▁▅▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▅ ▁
+  158 ms           Histogram: frequency by time          230 ms <
+
+ Memory estimate: 11.89 MiB, allocs estimate: 219834.
+
+julia> @benchmark _sfit(PC.randcurve())
+BenchmarkTools.Trial: 286 samples with 1 evaluation.
+ Range (min … max):   9.757 ms … 27.042 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     18.122 ms              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   17.488 ms ±  3.389 ms  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+              ▁                 ▆ ▂ ▂▃█▁▃    ▃
+  ▃▁▃▄▄▃▄▅▃▇▅██▅▇▇▆▇▆▅▄▅▇▅▄▆▄▅▆▇█▇█▇██████▇█▇█▆▄▇▃▃▃▃▁▃▃▃▁▁▃▄ ▄
+  9.76 ms         Histogram: frequency by time        25.1 ms <
+
+ Memory estimate: 379.95 KiB, allocs estimate: 7291.
+** UAB Server
+*** Packages
+
+#+begin_src julia :results output
+# using Distances
+# using Plots; pyplot()
+# import Combinatorics as CC
+
+import HomotopyContinuation as HC#, Nemo
+HC.@var x, y, t
+X = [x, y];
+HC.@var A[1:33];
+
+using Revise
+import SearchingTales as PC
+PC.set_VARS(X)
+PC.set_PARAM(t)
+PC.set_PARAMS_END(A);
+Threads.nthreads()
+# ENV["JULIA_DEBUG"] = "SearchingTales"
+# PC.set_CH_System(PC.System_dense());
+#+end_src
+*** Evolutionary
+**** Options
+#+begin_src julia
+import Evolutionary as EE
+options = EE.Options(iterations=50,
+                     show_trace=true,
+                     show_every=1,
+                     parallelization=:thread,
+                     # parallelization=:serial,
+                     );
+
+ga = EE.GA(populationSize = 50,
+           crossoverRate = 0.7,
+           # mutationRate = 0.3,
+           # selection = uniformranking(5),
+           # selection = EE.tournament(33),
+           # Positive integer specifies how many individuals in the current to survive to the next generation. Floating number specifies fraction of
+           # epsilon = 0.7,
+           crossover = PC.hyper_crossover(),
+           mutation = PC.hyper_mutate(0.7, 5e-1),
+           );
+#+end_src
 **** Initial curve
 
 #+begin_src julia
-C = PC.randcurve();
-_fit = PC.Fitness(C)
- # _fit = PC.fitness
-# _fit(C)
+_sfit = PC.FastFitness()
 D = PC.randcurve();
-_fit(D)
+_sfit(D)
 
-# HC.@var t
-# Ct = PC.param_curve(C, D, t)
-# Ft = PC.diagonal_system(Ct)
+
 #+end_src
-
-**** Optimize fit
+**** Optimize fastfit
 
 #+begin_src julia
-res = EE.optimize(_fit,
+res = EE.optimize(_sfit,
                   D,
                   ga,
                   options,
@@ -195,8 +265,8 @@ for i in 1:3 CC[11*(i-1)+rand(1:11)] = params[i] end
 
 F = PC.diagonal_system(CC; parameters = params)
 C = PC.randcurve()
-_fit = PC.Fitness(C)
- # _fit = PC.fitness
+# _fit = PC.Fitness(C)
+#  # _fit = PC.fitness
 # # _fit(C)
 # D = PC.randcurve();
 # _fit(D)
@@ -205,6 +275,7 @@ _fit = PC.Fitness(C)
 # Ct = PC.param_curve(C, D, t)
 # Ft = PC.diagonal_system(Ct)
 #+end_src
+
 ** Compute everything for each
 *** Pre-
 #+begin_src julia
