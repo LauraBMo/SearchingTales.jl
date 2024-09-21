@@ -166,11 +166,12 @@ function get_nodes(curve, F=diagonal_system(curve); kwargs...)
 end
 
 function check_multiplepoint(curve, coordinates; kwargs...)
-    notindiag = !(isapprox(first(coordinates), last(coordinates)))
+    indiag = isapprox(first(coordinates), last(coordinates))
+    indiag && @warn "Multiple point in diagonal!!!"
     pxs, pas = evalcurve.([curve], coordinates)
     # Are all the maximal minors px*qa-pa*qx zero?
     isoverlap = equal_projective(pxs, pas; kwargs...)
-    return notindiag && isoverlap
+    return !(indiag) && isoverlap
 end
 
 # Check multiple nodes (namely, the 36 of a random planar curve of degree 10)
