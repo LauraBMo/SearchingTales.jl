@@ -7,7 +7,7 @@ import HomotopyContinuation as HC
 _solve(args...; kwargs...) = HC.solve(args...;
                                       start_system=:total_degree,
                                       show_progress=false,
-                                      threading=false,
+                                      # threading=false,
                                       kwargs...)
 
 import LinearAlgebra as LA

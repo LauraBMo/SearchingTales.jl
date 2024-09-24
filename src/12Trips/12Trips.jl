@@ -15,7 +15,6 @@ const N = 3
 const VARS = Ref{Vector{HC.Variable}}()
 const PARAM = Ref{HC.Variable}()
 const PARAMS_END = Ref{Vector{HC.Variable}}()
-
 const DIST = Ref{DD.Metric}()
 
 function set_VARS(variables)
@@ -30,18 +29,17 @@ function set_PARAMS_END(params)
     PARAMS_END[] = params
 end
 
-
 function set_metric(distance)
     DIST[] = distance
 end
 
-multiexponents_affine(n, d) = Iterators.map(x -> (pop!(x); x), CC.multiexponents(n+1, d))
+_multiexponents_affine(n, d) = Iterators.map(x -> (pop!(x); x), CC.multiexponents(n+1, d))
 
 ## Redefine for better performance.
 function HC.ModelKit.monomials_exponents(n::Int, d::Int; affine::Bool = false)
     E =
         if affine
-            multiexponents_affine(n, d)
+            _multiexponents_affine(n, d)
         else
             CC.multiexponents(n, d)
         end

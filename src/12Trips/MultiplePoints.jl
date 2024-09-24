@@ -5,15 +5,22 @@
 @doc raw"""
     diagonal_coeffs((P, Q))
 
-Returns the coefficitens to the equations ... in a matrix.
+Returns the coefficitens to the equations (see below) in a matrix.
 
-Given variables x,y and polynomials w/o common roots:
-P(x) = a_0 + a_1*x ... + a_n*x^n ≅ [a_0,a_1,..,a_n] = v
-Q(x) = b_0 + b_1*x + ...+ b_n*x^n ≅ [b_0,b_1,..,b_n] = u
-Then, entries of M are the coefficients of the polynomial:
-P(x)Q(y) - P(y)Q(x) = sum(M[i,j]*x^(i-1)*y^(j-1), i, j)
-That is, M == 0 iff [P(x) : Q(x)] = [P(y) : Q(y)]
-or, ([P(x) : Q(x)], [P(y) : Q(y)]) ∈ diagonal ⊂ P1xP1
+Given variables `x,y` and polynomials w/o common roots:
+
+`P(x) = a_0 + a_1*x ... + a_n*x^n ≅ [a_0,a_1,..,a_n] = v`
+
+`Q(x) = b_0 + b_1*x + ...+ b_n*x^n ≅ [b_0,b_1,..,b_n] = u`
+
+Then, entries of `M` are the coefficients of the polynomial:
+
+`P(x)Q(y) - P(y)Q(x) = sum(M[i,j]*x^(i-1)*y^(j-1), i, j)`
+
+That is, `M == 0` iff `[P(x) : Q(x)] = [P(y) : Q(y)]`,
+or equivalently,\n
+
+`([P(x) : Q(x)], [P(y) : Q(y)]) ∈ diagonal ⊂ P1 x P1`
 
 # Examples
 ```jldoctest
@@ -27,20 +34,10 @@ function diagonal_coeffs((v, u))
     return M - LA.transpose(M)
 end
 
-# function curve_to_multiplepoints_eq(curve)
-#     # println("Polys: ", length(polynomials), ", polynomials' length: ", length.(polynomials))
-#     diagonal_coeffs.(CC.combinations(curve_to_polys(curve), 2))
-# end
-
-# Build a generic dense system of polynomials suited for the polynomials
-# Convert Julia Cartesian indices to polynomial support/exponents arrays.
-# index_to_support(I) = (collect ∘ Tuple)(I) .- 1
-# SupportIndices(axes::Tuple) = index_to_support.(CartesianIndices(axes))
-
 @doc raw"""
     SupportIndices(A::AbstractArray)
 
-Returns array of size `size(A)` whose `I` component is `I .-1`.
+Returns array of size `size(A)` whose `I`-th entry is `I.-1`.
 
 # Examples
 ```jldoctest

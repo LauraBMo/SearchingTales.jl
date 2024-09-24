@@ -1,4 +1,8 @@
 ##
+## Given a list of nodes `[1,2,...,n]` and its matrix of distances `M`,
+## compute a 3-partition somehow minimizing the sum of the perimeters
+## of such triangles.
+##
 
 findfirst_indiagonal(pairs) = findfirst(I -> reduce(==, I), pairs)
 
@@ -21,7 +25,7 @@ function push_ifisangle!(angles, edges)
 end
 
 # 'map' runs over the 'zip' the iterators!
-# angles and edges are sorted.
+# angles and edges are sorted so...
 istriangle(angle, edge) = all(map(==, angle, edge))
 
 function findfirst_triangle(edges)
@@ -58,6 +62,5 @@ function sorted_edges(M::AbstractMatrix)
 end
 
 get_partition(M::AbstractMatrix) = get_partition!(sorted_edges(M))
-
 get_partition(curve, multiplepoints) =
     get_partition(get_distances(eval_nodes(curve, multiplepoints)))
