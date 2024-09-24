@@ -4,13 +4,49 @@
 ## of such triangles.
 ##
 
-findfirst_indiagonal(pairs) = findfirst(I -> reduce(==, I), pairs)
+# Compute the perimeter for a few random 3-partitions and take the minimum.
+#
+randpartition(N::Int) = collect(Iterators.partition(Random.shuffle!(collect(1:N)), 3))
+
+function rand_get_partition(curve, multiplepoints, N = 20)
+    M = get_distances(curve, multiplepoints)
+    dim = size(M, 1)
+    min_partition = randpartition(dim)
+    init_perimeter = total_perimeter(min_partition, M)
+    min_perimeter = init_perimeter
+    for _ in 1:N
+        @debug min_perimeter
+        partition = randpartition(dim)
+        perimeter = total_perimeter(partition, M)
+        if perimeter < min_perimeter
+            min_perimeter = perimeter
+            min_partition = partition
+        end
+    end
+    @debug gain = init_perimeter - min_perimeter
+    return min_partition, min_perimeter
+end
+
+# Tring something smarter.
+# Consider the complete graph over the 36 nodes.
+# Sort edges by length, and start forming triangles
+# from the shortest.
+# So we get
+# @btime PC.get_partition($C, $multiplepoints);
+#   693.658 μs (22678 allocations: 1.54 MiB)
+# To get a similar perimeter with the random methos above
+# we need around  N = 1_000_000 with
+# @btime PC.rand_get_partition($C, $multiplepoints, 1_000_000);
+#   2.692 s (87000488 allocations: 5.51 GiB)
 
 # edges:
 # edge1 = i < j; edge2 = k < l
 # pairs = [(i,k) (j,k))]
 #         [(i,l) (j,l))]
 allpairs(edges) = vec(collect(Iterators.product(edges...)))
+
+findfirst_indiagonal(pairs) = findfirst(I -> reduce(==, I), pairs)
+
 function set_angle(i, pairs)
     common_node = first(pairs[i])
     sides = extrema(pairs[end-(i-1)])
@@ -63,4 +99,32 @@ end
 
 get_partition(M::AbstractMatrix) = get_partition!(sorted_edges(M))
 get_partition(curve, multiplepoints) =
-    get_partition(get_distances(eval_nodes(curve, multiplepoints)))
+    get_partition(get_distances(curve, multiplepoints))
+
+function _print_partition(io, partition)
+    print(io, "┌ Partition:\n")
+    l = 3; i = 1
+    while i < l+1
+        print(io, partition[i:l:end], "\n")
+        i += 1
+    end
+    print(io, "└ End Partition\n")
+end
+
+function total_perimeter(triangles, M)
+    loss = zero(eltype(M))
+    for T in triangles
+        # triangle = filter!(!isnothing, nodes[T])
+        # if length(triangle) > 1 # it is a triangle or a line
+        for (i, j) in CC.combinations(T, 2)
+            loss += M[i, j]
+        end
+        # end # T is a point of less, so no loss increment.
+    end
+    return loss #, 1/loss
+end
+
+function total_perimeter(curve, multiplepoints, partition)
+    M = get_distances(curve, multiplepoints)
+    return total_perimeter(partition, M)
+end

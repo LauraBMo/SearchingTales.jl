@@ -22,7 +22,7 @@ function hyper_crossover(a = () -> rand(), b = () -> 1. - a())
     function crossover(curve1::AbstractVector, curve2::AbstractVector; kwargs...)
         @debug "CrossOver:"
         child1 = a()*curve1 .+ b()*curve2
-        child2 = b()*curve1 .+ a()*curve2
+        child2 = b()*curve1 .+ a()*curve2 .+ 1e-1*randcurve()
         @debug "Procreating ok"
         # set_deformcurve!(DICT[], curve2, child1; kwargs...)
         # set_deformcurve!(DICT[], curve1, child2; kwargs...)

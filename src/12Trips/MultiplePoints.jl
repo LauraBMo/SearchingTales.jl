@@ -55,37 +55,71 @@ SupportIndices(A::AbstractArray) = SupportIndices(size(A))
 function diagonal_polys(polys)
     coeffs = diagonal_coeffs(polys)
     exponents = SupportIndices(coeffs)
-    out = vec(collect(zip(exponents, coeffs)))
+    out = zip(exponents, coeffs)
+    ## @btime fastfit(PC.randcurve())
+    # #sort!(out, lt=HC.ModelKit.td_order, by=first)
+    ## 7.756 ms (7288 allocations: 380.81 KiB)
     # sort!(out, lt=HC.ModelKit.td_order, by=first)
+    ## 8.159 ms (7288 allocations: 380.81 KiB)
+    ## Return pair:
+    ## (matrix of exponents, vector of coeffitients)
     return hstack(first.(out)), last.(out)
 end
 
-function diagonal_system(curve; kwargs...)
-    @debug "Final curve:" length(curve_to_polys(curve))
-    @debug "Combinations:" length(CC.combinations(curve_to_polys(curve), 2))
-    supps_coeffs = diagonal_polys.(CC.combinations(curve_to_polys(curve), 2))
-    supps, coeffs = first.(supps_coeffs), last.(supps_coeffs)
-    # @debug "Coeffs: ", typeof(coeffs), ", lengths: ", length.(coeffs)
-    # @debug "Supports: ", typeof(supps), ", matrix sizes: ", size.(supps)
-    # @debug "Coefficients: ", coeffs
-    return HC.System(supps, coeffs; variables=VARS[], kwargs...)
+function _expressions(polys)
+    combinations = CC.combinations(polys, 2)
+    @debug "Final curve:" length(polys) length(combinations)
+    ## Vector of pairs:
+    ## (matrix of exponents, vector of coeffitients)
+    supps_coeffs = diagonal_polys.(combinations)
+    out = build_system(supps_coeffs) ## 1
+    # out = HC.horner.(build_system(supps_coeffs), [PARAMS_END[]]) ## 2
+    # out = HC.horner.(build_system(supps_coeffs), [VARS[]]) ## 3
+    ## @btime fastfit(PC.randcurve())
+    # [1] 8.622 ms (7288 allocations: 380.81 KiB)
+    # [2] 8.035 ms (7291 allocations: 393.19 KiB)
+    # [3] 8.487 ms (7291 allocations: 393.19 KiB)
+    ## @btime fit(PC.randcurve())
+    # [1] 6.731 s (8246247 allocations: 423.85 MiB)
+    # [2] 6.778 s (8252456 allocations: 421.97 MiB)
+    # [3] 6.474 s (7235093 allocations: 381.69 MiB)
+    return out
 end
 
-get_multiplepoints(curve, F = diagonal_system(curve); kwargs...) =
-    sort_byreal!(_solve_onlynonsingular(F; kwargs...))
-
-
-## Get multiple-points via Monodromy
-
-
-
+function get_multiplepoints(curve; kwargs...)
+    @debug "Getting multiple points..."
+    exprs = _expressions(curve_to_polys(curve))
+    F = HC.System(exprs; variables=VARS[])
+    return _solve_onlynonsingular(F; kwargs...)
+end
 
 ## Track multiple-points of 'curve_init' to the ones of 'curve_end'
 ## Build flat homotopy H(x,param)
-function param_system(curve_init, curve_end, param; gamma)
+##
+function curve_homotopy(curve_init, curve_end, t; gamma)
     @debug "Param curve: " length(curve_init) length(curve_end)
-    param_curve = gamma .* (param .* curve_init) + (1 - param) .* curve_end
-    return diagonal_system(param_curve; parameters=[param])
+    return gamma .* (t .* curve_init) + (1 - t) .* curve_end
+end
+
+function param_system(curve_init, curve_end, t; gamma)
+    param_curve = curve_homotopy(curve_init, curve_end, t; gamma)
+    exprs = _expressions(curve_to_polys(param_curve))
+    return HC.System(exprs; variables=VARS[], parameters=[t])
+end
+
+function param_param_system(curve_init, curve_params, t; gamma)
+    params_param_curve = curve_homotopy(curve_init, curve_params, t; gamma)
+    exprs = _expressions(splitDIM(params_param_curve))
+    return HC.Homotopy(exprs, VARS[], t, curve_params)
+end
+
+function _solve_homotopy(homotopy, multiplepoints; kwargs...)
+    @debug "Solving..."
+    result = _solve(homotopy, multiplepoints; kwargs...)
+    @debug result
+    out = HC.solutions(result)
+    @debug "Solved! nsolutions:", length(out)
+    return out
 end
 
 function track_multiplepoints_flat(curve_init, curve_end, multiplepoints;
@@ -94,71 +128,36 @@ function track_multiplepoints_flat(curve_init, curve_end, multiplepoints;
     @debug "Verbose debugging information.  Invisible by default"
     @debug "Tracking multiplepoints (flat homotopy)"
     @debug "Setting homotopy..."
-    # param = HC.Variable(gensym(:t))
-    param = PARAM[]
-    vars = VARS[]
-    Gt = param_system(curve_init, curve_end, param; gamma=1.0)
-    homotopy = HC.ParameterHomotopy(HC.fixed(Gt; compile=false), [1.0], [0.0])
+    # t = HC.Variable(gensym(:t))
+    t = PARAM[]
+    Gt = param_system(curve_init, curve_end, t; gamma = gamma)
+    ## @btime fit(PC.randcurve())
+    # homotopy = HC.ParameterHomotopy(HC.fixed(Gt; compile=true), [1.0], [0.0])
+    ## 14.695 s (24918307 allocations: 1.24 GiB)
+    # homotopy = HC.ParameterHomotopy(HC.fixed(Gt; compile=false), [1.0], [0.0])
+    ## 147.459 ms (223634 allocations: 12.54 MiB)
     # homotopy = HC.ParameterHomotopy(Gt, [1.0], [0.0])
-    # homotopy = HC.Homotopy(HC.expressions(Gt), vars, param)
-    @debug "Solving..."
-    result = _solve(homotopy, multiplepoints; kwargs...)
-    # result = _solve(homotopy, multiplepoints;
-    #     # seed=0x75a6a462,
-    #     kwargs...)
-    # println(result)
-    # println(HC.solutions(result;
-    #     only_real=false,
-    #     real_tol=1e-6,
-    #     only_nonsingular=false,
-    #     only_singular=false,
-    #     only_finite=false,
-    #     multiple_results=false,
-    # ))
-    # out = HC.solutions(result;
-    #     only_real=false,
-    #     # real_tol=1e-6,
-    #     only_nonsingular=true,
-    #     only_singular=false,
-    #     only_finite=true,
-    #     multiple_results=false,
-    # )
-    out = HC.solutions(result)
-    @debug "Solved! Solutions: $(length(out))"
-    # return sort_byreal!(out)
-    return out
+    ##  6.760 s (9062431 allocations: 500.32 MiB)
+    homotopy = HC.Homotopy(HC.expressions(Gt), VARS[], t)
+    ## 6.474 s (7235093 allocations: 381.69 MiB)
+    return _solve_homotopy(homotopy, multiplepoints; kwargs...)
 end
 
-# function track_multiplepoints(multiplepoints, F, curve_new; kwargs...)
-#     G = diagonal_system(curve_new)
-#     homotopy = HC.StraightLineHomotopy(G, F; gamma=randn())
-#     result = _solve(homotopy, multiplepoints;
-#                     # seed=0x75a6a462,
-#                     kwargs...)
-#     println(result)
-#     # println(HC.solutions(result;
-#     #     only_real=false,
-#     #     real_tol=1e-6,
-#     #     only_nonsingular=false,
-#     #     only_singular=false,
-#     #     only_finite=false,
-#     #     multiple_results=false,
-#     # ))
-#     return HC.solutions(result;
-#         only_real=false,
-#         real_tol=1e-6,
-#         only_nonsingular=false,
-#         only_singular=false,
-#         only_finite=true,
-#         multiple_results=false,
-#     )
-# end
+function param_track_multiplepoints_flat(homotopy, curve_end, multiplepoints; kwargs...)
+    fix_homo = HC.fix_parameters(homotopy, complexfy(curve_end); compile = :all)
+    ## @btime fastfit(PC.randcurve())
+    ## :all    #   8.685 ms (7288 allocations: 380.81 KiB)
+    ## :mixed  # 126.428 ms (206692 allocations: 11.64 MiB)
+    ## :none   # 136.295 ms (201992 allocations: 11.49 MiB)
+    return _solve_homotopy(fix_homo, multiplepoints; kwargs...)
+end
 
+## Getting the actual singular points from the multiple points.
 eval_nodes(curve, multiplepoints) =
     LA.normalize.(evalcurve.([curve], first.(multiplepoints)))
 
-function get_nodes(curve, F=diagonal_system(curve); kwargs...)
-    multiplepoints = get_multiplepoints(curve, F; kwargs...)
+function get_nodes(curve; kwargs...)
+    multiplepoints = get_multiplepoints(curve; kwargs...)
     return eval_nodes(curve, multiplepoints)
 end
 
