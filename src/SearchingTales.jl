@@ -15,7 +15,7 @@ import Combinatorics as CC
 import Distances as DD
 # using Evolutionary
 using Parameters
-
+using Random
 
 include("Utils.jl")
 
