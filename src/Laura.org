@@ -108,20 +108,20 @@ PC.plotnodes(nodes, _fit.partition)
 #+begin_src julia
 # HC.COMPILE_DEFAULT[] = :none
 C = PC.randcurve();
-# _fit = PC.Fitness(C)
+_fit = PC.Fitness(C)
 _sfit = PC.FastFitness(C)
 
 D = PC.randcurve();
-# _fit(D)
+_fit(D)
 _sfit(D)
 #+end_src
 **** Options
 
 #+begin_src julia
 import Evolutionary as EE
-options = EE.Options(iterations=500,
+options = EE.Options(iterations=50,
                      show_trace=true,
-                     show_every=1,
+                     show_every=5,
                      parallelization=:thread,
                      # parallelization=:serial,
                      );
@@ -132,7 +132,7 @@ ga = EE.GA(populationSize = 50,
            # selection = uniformranking(5),
            # selection = EE.tournament(33),
            # Positive integer specifies how many individuals in the current to survive to the next generation. Floating number specifies fraction of
-           epsilon = 0.7,
+           epsilon = 0.4,
            crossover = PC.hyper_crossover(),
            mutation = PC.hyper_mutate(0.7, 5e-1),
            );
@@ -144,6 +144,20 @@ res = EE.optimize(_sfit,
                   ga,
                   options,
                   )
+#+end_src
+*** Random partitions
+
+#+begin_src julia
+# PC.randpartition(36)
+
+C = PC.randcurve();
+multiplepoints = PC.get_multiplepoints(C);
+M = PC.get_distances(C, multiplepoints);
+#+end_src
+
+#+begin_src julia
+P2, p2 = PC.rand_get_partition(C, multiplepoints, 100); p2
+P1 = PC.get_partition(C, multiplepoints); p1 = PC.total_perimeter(P1, M)
 #+end_src
 *** BenchMarks
 
