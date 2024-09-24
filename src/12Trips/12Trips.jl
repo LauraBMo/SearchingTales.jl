@@ -70,8 +70,18 @@ function _solve_onlynonsingular(args...; kwargs...)
         end
         return !(nsolutions < top)
     end
+    @debug "Solving..."
     result = _solve(args...; stop_early_cb=areallfound, kwargs...)
     return HC.unique_points(HC.solutions(result); group_action = _flip)
+end
+
+function _solve_homotopy(homotopy, multiplepoints; kwargs...)
+    @debug "Solving..."
+    result = _solve(homotopy, multiplepoints; kwargs...)
+    @debug result
+    out = HC.solutions(result)
+    @debug "Solved! nsolutions:", length(out)
+    return out
 end
 
 monomial(c, I, variables) = c * prod(variables .^ convert.(Int, I))

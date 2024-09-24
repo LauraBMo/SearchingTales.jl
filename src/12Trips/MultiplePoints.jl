@@ -113,15 +113,6 @@ function param_param_system(curve_init, curve_params, t; gamma)
     return HC.Homotopy(exprs, VARS[], t, curve_params)
 end
 
-function _solve_homotopy(homotopy, multiplepoints; kwargs...)
-    @debug "Solving..."
-    result = _solve(homotopy, multiplepoints; kwargs...)
-    @debug result
-    out = HC.solutions(result)
-    @debug "Solved! nsolutions:", length(out)
-    return out
-end
-
 function track_multiplepoints_flat(curve_init, curve_end, multiplepoints;
                                    gamma=randn(),
                                    kwargs...)
