@@ -6,25 +6,44 @@
 
 # Compute the perimeter for a few random 3-partitions and take the minimum.
 #
-randpartition(N::Int) = collect(Iterators.partition(Random.shuffle!(collect(1:N)), 3))
+randpartition(N::Int) = collect.(Iterators.partition(Random.shuffle!(collect(1:N)), 3))
 
-function rand_get_partition(curve, multiplepoints, N = 20)
+function rand_get_partition(curve::AbstractVector, multiplepoints, N = 20)
     M = get_distances(curve, multiplepoints)
+    return rand_get_partition(M, 1:N)
+end
+
+function rand_get_partition(M::AbstractMatrix, I)
     dim = size(M, 1)
+    @debug dim
     min_partition = randpartition(dim)
     init_perimeter = total_perimeter(min_partition, M)
     min_perimeter = init_perimeter
-    for _ in 1:N
-        @debug min_perimeter
+    for _ in I
         partition = randpartition(dim)
         perimeter = total_perimeter(partition, M)
         if perimeter < min_perimeter
             min_perimeter = perimeter
             min_partition = partition
+            @debug min_perimeter
         end
     end
-    @debug gain = init_perimeter - min_perimeter
+    @debug "gain", init_perimeter - min_perimeter
     return min_partition, min_perimeter
+end
+
+function rand_get_partition_multi(curve, multiplepoints, N = 20)
+    M = get_distances(curve, multiplepoints)
+    dim = size(M, 1)
+    @debug dim
+    I = 1:N
+    chunks = Iterators.partition(I, length(I) ÷ Threads.nthreads())
+    tasks = map(chunks) do chunk
+        Threads.@spawn rand_get_partition(M, chunk)
+    end
+    chunk_parts = fetch.(tasks)
+    _, i = findmin(last, chunk_parts)
+    return chunk_parts[i]
 end
 
 # Tring something smarter.
