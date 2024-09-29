@@ -52,10 +52,14 @@ function SupportIndices end
 SupportIndices(axes::Tuple) = collect.(Iterators.product([0:(i-1) for i in axes]...))
 SupportIndices(A::AbstractArray) = SupportIndices(size(A))
 
+"""
+    diagonal_polys(polys)
+
+
+"""
 function diagonal_polys(polys)
     coeffs = diagonal_coeffs(polys)
     exponents = SupportIndices(coeffs)
-    out = zip(exponents, coeffs)
     ## @btime fastfit(PC.randcurve())
     # #sort!(out, lt=HC.ModelKit.td_order, by=first)
     ## 7.756 ms (7288 allocations: 380.81 KiB)
@@ -63,7 +67,9 @@ function diagonal_polys(polys)
     ## 8.159 ms (7288 allocations: 380.81 KiB)
     ## Return pair:
     ## (matrix of exponents, vector of coeffitients)
-    return hstack(first.(out)), last.(out)
+    # out = zip(exponents, coeffs)
+    # return hstack(first.(out)), last.(out)
+    return hstack(exponents), coeffs
 end
 
 function _expressions(polys)
