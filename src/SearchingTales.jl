@@ -1,6 +1,7 @@
 module SearchingTales
 
 using DocStringExtensions: SIGNATURES, TYPEDEF
+using DelimitedFiles
 
 import HomotopyContinuation as HC
 ## My defaults for HC.jl (rightmost occurrence takes precedence in kwargs)

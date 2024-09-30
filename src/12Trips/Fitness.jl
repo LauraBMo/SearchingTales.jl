@@ -21,12 +21,14 @@ struct Fitness
     # Fitness(partition::Vector{Vector{Int}}) = new(partition)
 end
 
-function Fitness(curve::AbstractVector{<:Real} = randcurve(); kwargs...)
+function Fitness(curve::AbstractVector{<:Real} = randcurve(), partition = nothing; kwargs...)
     @debug "Verbose debugging information.  Invisible by default"
     @debug "Computing fit function for curve."
     multiplepoints = get_multiplepoints(curve; kwargs...)
-    @debug "Partition..."
-    partition = get_partition(curve, multiplepoints)
+    if isnothing(partition)
+        @debug "Partition..."
+        partition = get_partition(curve, multiplepoints)
+    end
     _debug_mpp(curve, multiplepoints, partition)
     return Fitness(curve, multiplepoints, partition)
 end
@@ -57,8 +59,10 @@ end
 
 FastFitness(_fit::Fitness, param_homotopy) =
     FastFitness(_fit.multiplepoints, _fit.partition, param_homotopy)
-function FastFitness(curve::AbstractVector{<:Real} = randcurve(); kwargs...)
-    _fit = Fitness(curve; kwargs...) # return Fitness(curve, multiplepoints, partition)
+function FastFitness(curve::AbstractVector{<:Real} = randcurve(), partition = nothing;
+                     kwargs...)
+    _fit = Fitness(curve, partition; kwargs...)
+    # return Fitness(curve, multiplepoints, partition)
     @debug "Param param system..."
     param_homotopy =
         param_param_system(complexfy(curve), PARAMS_END[], PARAM[]; gamma = randn())
@@ -81,3 +85,49 @@ function Base.print(io::IO, ffit::FastFitness; kwargs...)
     !(isempty(kwargs)) && print(io, kwargs)
 end
 Base.show(io::IO, ::MIME"text/plain", ffit::FastFitness) = Base.print(io, ffit)
+
+## Save and read a curve and its partition.
+_folder(name) = "12Trips/examples/" * name
+function _write(curve, partition, name; folder = _folder(name))
+    mkpath(folder)
+    cd((_) -> _pre_write(curve, partition), folder)
+end
+_write(curve, partition, i::Int = 1; kwargs...) =
+    _write(curve, partition, "min$i"; kwargs...)
+
+writeff(curve, ffit::FastFitness, name; kwargs...) =
+    _write(curve, ffit.partition, name; kwargs...)
+writeff(curve, ffit::FastFitness, i::Int = 1; kwargs...) =
+    _write(curve, ffit, "min$i"; kwargs...)
+
+function _pre_write(curve, partition)
+    open("curve.txt", "w") do io
+        writedlm(io, curve)
+    end
+    open("3part.txt", "w") do io
+        writedlm(io, partition)
+    end
+end
+
+# Read
+_read(name::AbstractString; folder = _folder(name)) =
+    cd(() -> _pre_read(), folder)
+_read(i::Int = 1; kwargs...) = _read("min$i"; kwargs...)
+
+function readff(name::AbstractString; kwargs...)
+    curve, part = _read(name; kwargs...)
+    # Create fast fitness funtion
+    # from which to compute curve's fitness.
+    return curve, FastFitness(randcurve(), part)
+end
+readff(i::Int = 1; kwargs...) = readff("min$i"; kwargs...)
+
+function _pre_read()
+    # Read data
+    curve  = readdlm("curve.txt", '\t', Float64, '\n')
+    part   = readdlm("3part.txt", '\t', Int, '\n')
+    # Convert to convinient format
+    curve = vec(curve)
+    part = collect.(eachrow(part))
+    return curve, part
+end
