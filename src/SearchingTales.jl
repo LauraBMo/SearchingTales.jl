@@ -2,6 +2,9 @@ module SearchingTales
 
 using DocStringExtensions: SIGNATURES, TYPEDEF
 using DelimitedFiles
+using Colors
+using RecipesBase
+using Parameters
 
 import HomotopyContinuation as HC
 ## My defaults for HC.jl (rightmost occurrence takes precedence in kwargs)
@@ -15,7 +18,6 @@ import LinearAlgebra as LA
 import Combinatorics as CC
 import Distances as DD
 # using Evolutionary
-using Parameters
 using Random
 
 include("Utils.jl")
