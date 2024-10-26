@@ -1,44 +1,82 @@
-
-## Save a curve and its info
-get_curve(curve) = curve # Curve could be it own type.
-function unpackall(curve)
-    _curve = get_curve(curve) # convert to vector
-    multiplepoints = get_multiplepoints(curve)
-    nodes = eval_nodes(curve, multiplepoints)
-    part = get_partition(curve, nodes)
-    return _curve, multiplepoints, nodes, part
-end
-const EXTS = "_".*["curve", "multpp", "nodes", "part"].*".txt"
-curve_iter(curve) = zip(EXTS, unpackall(curve))
-
-
-function pre_save_PC(curve, name)
-    for (naming, field) in curve_iter(curve)
-        open(name*naming, "w") do io
-            writedlm(io, field)
-        end
+__write(name, object) =
+    open(name, "w") do io
+        writedlm(io, object)
     end
+
+## Save and read a curve and a fit function computing its current fitness.
+_folder(name) = "12Trips/examples/" * name
+function write(curve, fit::Fitness, name::AbstractString; folder = _folder(name))
+    mkpath(folder)
+    cd(() -> _pre_write(curve, fit), folder)
 end
-function save_PC(curve, name::AbstractString)
-    mkpath(name)
-    cd(() -> pre_save_PC(curve, name), name)
+write(curve::AbstractVector{<:Real}, fit::Fitness, i::Int = 1; kwargs...) =
+    write(curve, fit, "min$i"; kwargs...)
+
+function _pre_write(curve, fit)
+    multiplepoints = get_multiplepoints(fit, curve)
+    ## Write info for `curve`
+    __write("curve.txt", curve)
+    __write("mp.txt", multiplepoints)
+    perimeter = total_perimeter(curve, multiplepoints, fit.partition)
+    @info "Perimeter of `curve`:" perimeter
+    __write("fitness.txt", perimeter)
+    mkpath("fit/")
+    ## Write info for `fit`
+    cd(() -> _pre_write_fit(fit), "fit/")
 end
 
-function pre_read_PC(name)
-    names  = name.*EXTS
-    # Read data
-    curve  = readdlm(names[1], '\t', ComplexF64, '\n')
-    multpp = readdlm(names[2], '\t', ComplexF64, '\n')
-    nodes  = readdlm(names[3], '\t', ComplexF64, '\n')
-    part   = readdlm(names[4], '\t', Int, '\n')
+function _pre_write_fit(fit::Fitness)
+    @unpack curve, partition, multiplepoints = fit
+    __write("curve.txt", curve)
+    __write("3part.txt", partition)
+    __write("mp.txt", multiplepoints)
+end
+# Fitness{T}
+#     curve::Vector{Float64}
+#     multiplepoints::Vector{Vector{ComplexF64}}
+#     partition::Vector{Vector{Int}}
+#     param_homotopy::T
+
+# Read
+read(name::AbstractString; folder = _folder(name)) =
+    cd(() -> _pre_read(), folder)
+read(i::Int = 1; kwargs...) = read("min$i"; kwargs...)
+
+function _pre_read()
+    curve  = _pre_read_curve()
+    # multiplepoints = _pre_read_vecvec("mp.txt", ComplexF64)
+    old_fitness = first(readdlm("fitness.txt", Float64))
+    fit = cd(() -> _pre_read_fit(), "fit/")
+    new_fitness = fit(curve)
+    # perimeter = total_perimeter(curve, multiplepoints, fit.partition)
+    Delta = abs(old_fitness - new_fitness)
+    @info "Fitness info:" old_fitness new_fitness Delta # perimeter
+    return curve, fit
+end
+
+function _pre_read_fit()
+    curve  = _pre_read_curve()
+    partition = _pre_read_vecvec("3part.txt", Int)
+    multiplepoints = _pre_read_vecvec("mp.txt", ComplexF64)
+    @debug "Are multiple points:" check_multiplepoints(curve, multiplepoints)
+    param_homotopy =
+        param_param_system(curve; gamma = rand())
+        # param_param_system(curve; gamma = 3.0)
+    return Fitness(curve, multiplepoints, partition, param_homotopy)
+end
+# Fitness{T}
+#     curve::Vector{Float64}
+#     multiplepoints::Vector{Vector{ComplexF64}}
+#     partition::Vector{Vector{Int}}
+#     param_homotopy::T
+
+function _pre_read_vecvec(name, ::Type{T}) where T
+    out = readdlm(name, '\t', T, '\n')
     # Convert to convinient format
-    curve = vec(curve)
-    multpp = Vector{ComplexF64}[collect(x) for x in eachrow(multpp)]
-    nodes = Vector{ComplexF64}[collect(x) for x in eachrow(nodes)]
-    part = collect.(eachrow(part))
-    return curve, multpp, nodes, part
+    return collect.(eachrow(out))
 end
-read_PC(name::AbstractString) = cd(() -> pre_read_PC(name), name)
-
-save_PC(curve, i::Int = 1) = save_PC(curve, "minimizer$i")
-read_PC(i::Int = 1) = read_PC("minimizer$i")
+function _pre_read_curve()
+    curve = readdlm("curve.txt", '\t', Float64, '\n')
+    # Convert to convinient format
+    return vec(curve)
+end
