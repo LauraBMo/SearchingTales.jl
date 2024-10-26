@@ -78,9 +78,9 @@ function _expressions(polys)
     ## Vector of pairs:
     ## (matrix of exponents, vector of coeffitients)
     supps_coeffs = diagonal_polys.(combinations)
-    out = build_system(supps_coeffs) ## 1
-    # out = HC.horner.(build_system(supps_coeffs), [PARAMS_END[]]) ## 2
-    # out = HC.horner.(build_system(supps_coeffs), [VARS[]]) ## 3
+    out = __build_system(supps_coeffs)                               ## [1]
+    # out = HC.horner.(__build_system(supps_coeffs), [PARAMS_END[]]) ## [2]
+    # out = HC.horner.(__build_system(supps_coeffs), [VARS[]])       ## [3]
     ## @btime fastfit(PC.randcurve())
     # [1] 8.622 ms (7288 allocations: 380.81 KiB)
     # [2] 8.035 ms (7291 allocations: 393.19 KiB)

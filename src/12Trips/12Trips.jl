@@ -84,30 +84,31 @@ function _solve_homotopy(homotopy, multiplepoints; kwargs...)
     return out
 end
 
-monomial(c, I, variables) = c * prod(variables .^ convert.(Int, I))
+# monomial(c, I, variables) = c * prod(variables .^ convert.(Int, I))
 ## Code from HomotopyContinuation.jl; model_kit/symbolic.jl::1128
-function build_system(support, coefficients, variables)
-    map(support, coefficients) do A, c
-        fi = HC.Expression(0)
-        for (k, I) in enumerate(eachcol(A))
-            HC.ModelKit.add!(fi, fi, monomial(c[k], I, variables))
-        end
-        fi
-    end
-end
-build_system(supp_coeffs, variables = VARS[]) =
-    build_system(first.(supp_coeffs), last.(supp_coeffs), variables)
-# 6.936 ms (7294 allocations: 381.22 KiB)
-
-# function build_system(supp_coeffs, variables = VARS[])
-#     map(supp_coeffs) do (A, c)
+# function build_system(support, coefficients, variables)
+#     map(support, coefficients) do A, c
 #         fi = HC.Expression(0)
-#         for (k, a) in enumerate(eachcol(A))
-#             HC.ModelKit.add!(fi, fi, c[k] * prod(variables .^ convert.(Int, a)))
+#         for (k, I) in enumerate(eachcol(A))
+#             HC.ModelKit.add!(fi, fi, monomial(c[k], I, variables))
 #         end
 #         fi
 #     end
 # end
+# build_system(supp_coeffs, variables = VARS[]) =
+#     build_system(first.(supp_coeffs), last.(supp_coeffs), variables)
+# 6.936 ms (7294 allocations: 381.22 KiB)
+
+__monomial(ci, ei) = ci * prod(VARS[] .^ convert.(Int, ei))
+function __build_system(supp_coeffs)
+    map(supp_coeffs) do (A, c)
+        fi = HC.Expression(0)
+        for (ci, ei) in zip(c, eachcol(A))
+            HC.ModelKit.add!(fi, fi, __monomial(ci, ei))
+        end
+        fi
+    end
+end
 # 7.005 ms (7294 allocations: 381.22 KiB)
 
 # include("Utils.jl") ## Included in main
