@@ -99,6 +99,7 @@ function findfirst_triangle(edges)
 end
 
 function get_partition!(edges)
+    @debug "Partition..."
     triangles = Vector{Int}[]
     while !isempty(edges)
         new_T = findfirst_triangle(edges)
@@ -121,7 +122,7 @@ get_partition(curve, multiplepoints) =
     get_partition(get_distances(curve, multiplepoints))
 
 function _print_partition(io, partition)
-    print(io, "┌ Partition:\n")
+    print(io, "\n┌ Partition:\n")
     l = 3; i = 1
     while i < l+1
         print(io, partition[i:l:end], "\n")
